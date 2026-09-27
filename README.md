@@ -4,6 +4,8 @@
 
 - Illustrations originales de type manuel scolaire : objets et outils reconnaissables, sans échelle.
 - Une adresse directe par séquence : `/5/01/`, `/4/01/`, `/3/01/`, etc.
+- 46 ateliers supplémentaires dans 36 séquences : multimètre, luxmètre, règle, pied à coulisse, balance, chronomètre, récipient gradué, thermomètre, comparateur et assemblage.
+- Simulations toujours disponibles ; matériel réel en complément selon les équipements.
 - Manipulations et observations à l’écran ; raisonnements, réponses et conclusions sur papier.
 - Aucun menu entre activités, aucune zone de réponse rédigée, aucun corrigé ou contrôle publié.
 - Programmation dans Scratch ; les pages proposent des expériences et des comportements à observer.
