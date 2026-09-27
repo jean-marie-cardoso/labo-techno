@@ -1,0 +1,8 @@
+*
+!.gitignore
+!README.md
+!public/
+!public/**
+!.github/
+!.github/**
+.DS_Store
