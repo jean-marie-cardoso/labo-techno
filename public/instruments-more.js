@@ -2,6 +2,37 @@
 (()=>{
 const T=window.instrumentTools,{setup,note,help,choices,text,ticks}=window.instrumentHelpers;
 Object.assign(T,{
+bottleLeak(p,c){
+ const b=setup(p,'Gourde, joint et récipient gradué pour recueillir une fuite');b.drawing.setAttribute('viewBox','0 0 640 420');
+ const cap=select(b.controls,'Forme du bouchon',[['smooth','Lisse'],['winged','À ailettes']]),seal=select(b.controls,'Joint',[['none','Sans joint'],['good','Bien placé'],['misplaced','Mal placé']]),closure=select(b.controls,'Fermeture',[['closed','Complètement vissée'],['partial','Partiellement vissée']]),position=select(b.controls,'Position pendant l’essai',[['180','Retournée'],['90','Couchée'],['0','Debout']]),trial=select(b.controls,'Essai',[['0','1'],['1','2'],['2','3']]);
+ const inputs=[cap,seal,closure,position,trial];let start=null,raf=null,progress=0,result=null;
+ // Fictitious classroom data, not a physical prediction. Grip shape does not alter the seal.
+ const volume=()=>{const i=+trial.value;let v=c.volumes[seal.value][i]+(closure.value==='partial'?c.volumes.partial[i]:0);return Math.round(v*(+position.value/180))};
+ const draw=()=>{
+  const running=start!==null,angle=+position.value*(running||result!==null?Math.min(1,progress*5):0),rad=angle*Math.PI/180;
+  const x=220-72*Math.sin(rad),y=110-72*Math.cos(rad),v=result===null?volume()*progress:result,waterY=381-v*3;
+  const wings=cap.value==='winged'?'<path d="M184 33h-23v16h23M256 33h23v16h-23" fill="#487b88" stroke="#294f59" stroke-width="3"/>':'';
+  b.drawing.innerHTML='<g data-bottle="'+cap.value+'" transform="rotate('+(-angle)+' 220 110)"><path d="M190 54V71Q165 82 165 104V165Q165 190 220 190Q275 190 275 165V104Q275 82 250 71V54Z" fill="#a8ced3" stroke="#345f68" stroke-width="3"/><path d="M172 106H268V164Q268 182 220 182Q172 182 172 164Z" fill="#67b5d280"/><path d="M183 106v54" stroke="#ecf8f6" stroke-width="8" stroke-linecap="round"/>'+
+   (seal.value==='none'?'':'<ellipse data-seal="'+seal.value+'" cx="220" cy="56" rx="32" ry="6" fill="none" stroke="#c57832" stroke-width="5" transform="rotate('+(seal.value==='misplaced'?17:0)+' 220 56)"/>')+
+   '<g transform="translate(0 '+(closure.value==='partial'?-9:0)+')">'+wings+'<rect x="184" y="30" width="72" height="23" rx="7" fill="#487b88" stroke="#294f59" stroke-width="3"/><ellipse cx="220" cy="31" rx="36" ry="7" fill="#83b1bb" stroke="#294f59" stroke-width="2"/></g></g>'+
+   '<path d="M90 222H360L235 262V276H215V262Z" fill="#dce5e6" stroke="#557471" stroke-width="3"/>'+
+   (running&&v>0&&progress>.2?'<path d="M'+x+' '+y+'Q'+(x-12)+' 210 205 226M225 265V'+Math.max(280,waterY)+'" fill="none" stroke="#439bc5" stroke-width="4" stroke-dasharray="7 7" stroke-dashoffset="'+(-progress*160)+'"/>':'')+
+   '<path d="M175 280V380Q225 398 275 380V280" fill="#eff9fb" stroke="#527679" stroke-width="3"/>'+
+   (v>0?'<path d="M178 '+waterY+'H272V379Q225 393 178 379Z" fill="#77c1de"/>':'')+
+   '<g stroke="#345e65">'+Array.from({length:31},(_,i)=>'<path d="M'+(i%5?258:248)+' '+(381-i*3)+'H273"/>'+(i%5?'':text(280,386-i*3,String(i),14))).join('')+'</g>'+
+   text(316,315,'mL',20)+text(375,60,'500 mL au départ',20)+text(375,92,'Essai de 20 s',20)+text(375,132,'Joint : '+seal.selectedOptions[0].text,18)+text(375,164,closure.value==='closed'?'Bouchon fermé':'Fermeture partielle',18)+text(375,205,'Temps simulé',18)+text(410,240,(progress*20).toFixed(0)+' s',26)+text(375,345,'Eau recueillie',20);
+  b.screen.textContent=result===null?(running?'Essai en cours…':'Prêt pour un essai'):result+' mL';
+  const status=running?'Observe l’eau et le récipient. Les réglages restent fixes pendant l’essai.':result===null?'Choisis tes réglages. Chaque essai repart avec 500 mL et un récipient vide.':'Relève le volume et les réglages sur papier. Change un seul élément pour comparer.';
+  if(b.status.textContent!==status)b.status.textContent=status;
+ };
+ const tick=()=>{progress=Math.min(1,(performance.now()-start)/5000);if(progress===1){result=volume();start=null;inputs.forEach(e=>e.disabled=false);launch.disabled=false;raf=null}else raf=requestAnimationFrame(tick);draw()};
+ const reset=()=>{if(raf!==null)cancelAnimationFrame(raf);raf=null;start=null;progress=0;result=null;inputs.forEach(e=>e.disabled=false);launch.disabled=false;draw()};
+ const launch=button(b.controls,'Lancer l’essai de 20 s',()=>{reset();start=performance.now();inputs.forEach(e=>e.disabled=true);launch.disabled=true;raf=requestAnimationFrame(tick);draw()});
+ button(b.controls,'Vider et préparer un nouvel essai',reset);inputs.forEach(e=>e.addEventListener('change',reset));draw();
+ help(p,'Pour Q3 : bouchon lisse, complètement vissé, gourde retournée. Compare sans joint et joint bien placé, avec les essais 1, 2 et 3. Lis le volume en mL. Teste ensuite le joint mal placé. Garde tes relevés et conclusions sur papier.');
+ note(p,'Modèle fictif : 20 s sont représentées en 5 s. Petites graduations : 1 mL. La forme de la prise ne change pas le volume dans ce modèle. Ni les chocs ni l’effort d’ouverture ne sont simulés. Une lecture de 0 mL ne prouve pas l’absence de toute fuite réelle.');
+},
+
 stopwatch(p,c){
  const b=setup(p,'Chronomètre et mouvement à observer'),which=choices(b.controls,'Objet / configuration',c.samples),trial=select(b.controls,'Essai',[['0','1'],['1','2'],['2','3']]);
  let eventStart=null,eventDuration=0,clockStart=null,elapsed=0,raf=null;
