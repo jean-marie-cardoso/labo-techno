@@ -7,20 +7,39 @@ stopwatch(p,c){
  let eventStart=null,eventDuration=0,clockStart=null,elapsed=0,raf=null;
  const now=()=>performance.now()/1000;
  const time=()=>elapsed+(clockStart===null?0:now()-clockStart);
+ // One shared timestamp: the movement and measurement start together.
+ const bottle=(progress)=>{
+  const winged=/ailettes/i.test(c.samples[+which.value][0]),unscrew=Math.min(1,progress/.78),lift=Math.max(0,(progress-.78)/.22),angle=unscrew*Math.PI*6;
+  const capX=460+lift*85,capY=89-unscrew*16-lift*39,wingWidth=15+25*Math.abs(Math.cos(angle));
+  return '<g data-bottle="'+(winged?'winged':'smooth')+'"><ellipse cx="460" cy="277" rx="64" ry="9" fill="#314b4920"/>'+
+   '<path d="M427 107V132Q403 143 400 167V250Q400 276 460 276Q520 276 520 250V167Q517 143 493 132V107Z" fill="#8fbfc7" stroke="#345f68" stroke-width="3"/>'+
+   '<path d="M412 171V247Q412 257 424 259V163" fill="#c8e6e8"/><path d="M502 165V254" stroke="#659ba5" stroke-width="8" stroke-linecap="round"/>'+
+   '<rect x="431" y="188" width="58" height="41" rx="12" fill="#e5f1ec"/><path d="M460 195Q440 216 460 222Q480 216 460 195" fill="#5b99a6"/>'+
+   '<ellipse cx="460" cy="107" rx="33" ry="8" fill="#294b51" stroke="#345f68" stroke-width="3"/><path d="M428 115Q460 124 492 115M428 122Q460 131 492 122" fill="none" stroke="#d5e9e5" stroke-width="2"/>'+
+   '<g data-cap="'+(winged?'winged':'smooth')+'" transform="translate('+capX+' '+capY+') rotate('+(lift*18)+')">'+
+   (winged?'<path d="M-36 -8L-'+(36+wingWidth)+' -18Q-'+(43+wingWidth)+' -12 -'+(36+wingWidth)+' 10L-36 16M36 -8L'+(36+wingWidth)+' -18Q'+(43+wingWidth)+' -12 '+(36+wingWidth)+' 10L36 16" fill="#3f717d" stroke="#294f59" stroke-width="3"/>':'')+
+   '<path d="M-37 -9V16C-37 29 37 29 37 16V-9Z" fill="#487b88" stroke="#294f59" stroke-width="3"/><ellipse cy="-9" rx="37" ry="10" fill="#83b1bb" stroke="#294f59" stroke-width="3"/>'+
+   (Math.cos(angle)>=0?'<path d="M'+(28*Math.sin(angle))+' 1v15" stroke="#d9efef" stroke-width="4" stroke-linecap="round"/>':'')+'</g></g>';
+ };
  const draw=()=>{const progress=eventStart===null?0:Math.min(1,(now()-eventStart)/eventDuration);let scene='';
  if(c.scene==='shutter')scene='<rect x="365" y="30" width="210" height="225" fill="#dce9ee" stroke="#4d6265" stroke-width="8"/><rect x="370" y="35" width="200" height="'+(215*(1-progress))+'" fill="#819393"/>';
  else if(c.scene==='traffic')scene='<rect x="405" y="30" width="120" height="245" rx="15" fill="#384a46"/><circle cx="465" cy="100" r="40" fill="'+(progress===1||eventStart===null?'#c24740':'#75837a')+'"/><circle cx="465" cy="205" r="40" fill="'+(progress<1&&eventStart!==null?'#47a878':'#75837a')+'"/>';
- else scene='<path d="M408 95H512L528 250Q460 280 392 250Z" fill="#94bac0" stroke="#3b6870" stroke-width="4"/><rect x="'+(403+(progress===1?58:0))+'" y="'+(75-(progress===1?35:0))+'" width="116" height="32" rx="9" fill="#527b86" transform="rotate('+(progress*12)+' 460 90)"/>';
- b.drawing.innerHTML='<rect x="134" y="18" width="44" height="30" rx="7" fill="#738c85"/><circle cx="157" cy="171" r="116" fill="#3d5553" stroke="#253b3a" stroke-width="8"/><rect x="70" y="130" width="176" height="65" rx="9" fill="#c4d6ae"/>'+text(90,170,'CHRONO',24)+scene+text(350,315,eventStart===null?'Prêt':progress===1?c.endLabel:'Mouvement en cours',18);
- b.screen.textContent=time().toFixed(1).replace('.',',')+' s';b.status.textContent=eventStart===null?'Lance le mouvement et chronomètre toi-même.':progress===1?c.endLabel+' — arrête le chronomètre si ce n’est pas déjà fait.':'Observe le mouvement. Le chronomètre reste indépendant.';
+ else scene=bottle(progress);
+ const reading=time().toFixed(1).replace('.',',')+' s';
+ b.drawing.innerHTML='<rect x="134" y="18" width="44" height="30" rx="7" fill="#738c85"/><circle cx="157" cy="171" r="116" fill="#3d5553" stroke="#253b3a" stroke-width="8"/><rect x="70" y="130" width="176" height="65" rx="9" fill="#c4d6ae"/>'+text(86,172,reading,26)+scene+text(340,315,eventStart===null?'Prêt':progress===1?c.endLabel:'Mouvement en cours',18);
+ b.drawing.setAttribute('aria-label',c.scene==='bottle'?c.samples[+which.value][0]+' : '+(eventStart===null?'fermé':progress===1?'retiré':'ouverture en cours'):'Chronomètre et mouvement à observer');
+ b.screen.textContent=reading;
+ const status=eventStart===null?'Un seul clic lance le mouvement et le chronomètre.':clockStart===null?'Mesure arrêtée. Note ta durée sur papier ; prépare un nouvel essai pour recommencer.':progress===1?c.endLabel+' — arrête le chronomètre.':'Observe le mouvement. Arrête le chronomètre à l’événement final.';
+ if(b.status.textContent!==status)b.status.textContent=status;
+ stop.disabled=clockStart===null;
  if(clockStart!==null||(eventStart!==null&&progress<1))raf=requestAnimationFrame(draw);else raf=null;};
  const refresh=()=>{if(raf!==null)cancelAnimationFrame(raf);draw()};
- const launch=button(b.controls,'Lancer le mouvement',()=>{eventDuration=c.samples[+which.value][1][+trial.value];eventStart=now();which.disabled=true;trial.disabled=true;launch.disabled=true;refresh()});
- button(b.controls,'Démarrer le chronomètre',()=>{if(clockStart===null){clockStart=now();refresh()}});
- button(b.controls,'Arrêter le chronomètre',()=>{if(clockStart!==null){elapsed=time();clockStart=null;refresh()}});
- button(b.controls,'Remettre le chronomètre à zéro',()=>{elapsed=0;clockStart=null;refresh()});
- button(b.controls,'Préparer un nouvel essai',()=>{eventStart=null;eventDuration=0;elapsed=0;clockStart=null;which.disabled=false;trial.disabled=false;launch.disabled=false;refresh()});draw();
- help(p,'Prépare ton tableau sur papier. Lance le mouvement et démarre ton chronomètre au départ. Arrête-le à l’événement final. Une erreur de départ ou d’arrêt change ta mesure ; recommence si nécessaire.');note(p,'Temps réel du navigateur, à 0,1 s près. Les durées du mouvement viennent du dossier ; le chronomètre mesure tes propres clics. Il ne s’arrête pas automatiquement. Garde cet onglet visible pendant l’essai.');
+ const launch=button(b.controls,'Lancer le mouvement et le chronomètre',()=>{eventDuration=c.samples[+which.value][1][+trial.value];elapsed=0;eventStart=clockStart=now();which.disabled=true;trial.disabled=true;launch.disabled=true;refresh()});
+ const stop=button(b.controls,'Arrêter le chronomètre',()=>{if(clockStart!==null){elapsed=time();clockStart=null;refresh()}});
+ const reset=()=>{eventStart=null;eventDuration=0;elapsed=0;clockStart=null;which.disabled=false;trial.disabled=false;launch.disabled=false;refresh()};
+ button(b.controls,'Préparer un nouvel essai',reset);
+ which.addEventListener('change',reset);trial.addEventListener('change',reset);draw();
+ help(p,'Prépare ton tableau sur papier. Choisis une configuration et un essai. Le bouton de lancement démarre en même temps le mouvement et le chronomètre. Arrête le chronomètre à l’événement final. Relève la durée, puis prépare un nouvel essai.');note(p,'Temps réel du navigateur, à 0,1 s près. Les durées du mouvement viennent du dossier. Le départ est synchronisé ; ton clic d’arrêt influence la mesure. Le chronomètre ne s’arrête pas automatiquement. Garde cet onglet visible pendant l’essai.');
 },
 volume(p,c){
  const b=setup(p,'Récipient gradué transparent avec ménisque'),sample=choices(b.controls,'Bac à contrôler',c.items),upright=toggle(b.controls,'Récipient vertical sur table horizontale',true),eye=select(b.controls,'Hauteur des yeux',[['low','En dessous du liquide'],['level','Au niveau du ménisque'],['high','Au-dessus du liquide']]);let vol=0;
