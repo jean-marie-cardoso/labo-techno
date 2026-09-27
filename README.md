@@ -2,6 +2,7 @@
 
 44 activités de technologie pour les 5e, 4e et 3e, liées aux fiches de cours 2026–2027.
 
+- Illustrations originales de type manuel scolaire : objets et outils reconnaissables, sans échelle.
 - Une adresse directe par séquence : `/5/01/`, `/4/01/`, `/3/01/`, etc.
 - Manipulations et observations à l’écran ; raisonnements, réponses et conclusions sur papier.
 - Aucun menu entre activités, aucune zone de réponse rédigée, aucun corrigé ou contrôle publié.
