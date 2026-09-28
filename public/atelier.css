@@ -15,3 +15,5 @@
 .lamp-examples summary{cursor:pointer;font-weight:700}
 .lamp-examples li{margin:12px 0}
 @media(max-width:900px){.example-lamps{grid-template-columns:repeat(10,minmax(0,1fr));gap:3px}.example-lamp{padding:2px}.example-choices button{flex:1 1 100%}}
+
+.fan-controls{display:flex;flex-wrap:wrap;gap:10px 25px;margin:16px 0}.fan-controls .toggle{margin:6px 0;font-size:16px}.fan-drawing{overflow-x:auto;border:1px solid #dbe3de;border-radius:12px;background:#fff}.fan-drawing svg{display:block;width:100%;min-width:620px;height:auto;margin:0;max-height:none}.fan-state{margin-top:18px}.fan-experiment .hint{max-width:850px}
