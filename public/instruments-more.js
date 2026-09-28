@@ -2,6 +2,60 @@
 (()=>{
 const T=window.instrumentTools,{setup,note,help,choices,text,ticks}=window.instrumentHelpers;
 Object.assign(T,{
+replacement(p,c){
+ p.classList.add('replacement-bench');
+ const b=setup(p,'Maquette d’hélice posée sur un support remplaçable, avec une charge et une règle');b.drawing.setAttribute('viewBox','0 0 900 430');
+ let installed='damaged',fixed=true,loaded=false;
+ const measure=E('div',undefined,'replacement-step'),repair=E('div',undefined,'replacement-step');b.controls.append(measure,repair);
+ measure.append(E('h3','1. Faire un essai'));
+ const load=button(measure,'Poser la charge d’essai',()=>{loaded=!loaded;draw()});
+ const ruler=select(measure,'Placer la règle',[['away','Règle rangée'],['middle','Au repère central'],['left','Sur l’appui gauche']]);
+ measure.append(E('p','Mesure avant le remplacement, puis après. Garde la même charge et le même point de mesure. Note tes relevés sur papier.','hint'));
+ repair.append(E('h3','2. Remplacer la pièce'));
+ const part=select(repair,'Pièce saine à essayer',c.parts.map((x,i)=>[String(i),x[0]]));
+ const remove=button(repair,'Déposer l’hélice et retirer le support',()=>{installed=null;fixed=false;draw()});
+ const place=button(repair,'Placer la pièce choisie',()=>{installed=+part.value;fixed=false;draw()});
+ const fasten=button(repair,'Fixer la pièce et reposer l’hélice',()=>{fixed=true;draw()});
+ repair.append(E('p','Retire d’abord la charge. Après le remplacement, refais un essai avec les commandes de l’étape 1.','hint'));
+ const reset=button(p,'Repartir du support endommagé',()=>{installed='damaged';fixed=true;loaded=false;part.value='0';ruler.value='away';draw()});reset.classList.add('secondary');
+ const blade=(x,y)=>`<g transform="translate(${x} ${y})"><path d="M-12 50L-24 76H24L12 50" fill="#869ba2" stroke="#405d68" stroke-width="3"/><circle r="54" fill="#ecf3ef" stroke="#698c89" stroke-width="4"/><g fill="#458e83" stroke="#285b55" stroke-width="2"><path d="M0 0C-16-24-9-51 11-45C32-42 40-24 17-13Z"/><path d="M0 0C-16-24-9-51 11-45C32-42 40-24 17-13Z" transform="rotate(120)"/><path d="M0 0C-16-24-9-51 11-45C32-42 40-24 17-13Z" transform="rotate(240)"/></g><circle r="9" fill="#4c6268"/></g>`;
+ function draw(){
+  const present=installed!==null,damaged=installed==='damaged',displacement=loaded?(damaged?16:c.parts[installed][1]):0,dy=displacement*3;
+  load.disabled=!present||!fixed;load.textContent=loaded?'Retirer la charge d’essai':'Poser la charge d’essai';remove.disabled=!present||loaded;place.disabled=present;fasten.disabled=!present||fixed;part.disabled=present||loaded;
+  const name=!present?'Support retiré':damaged?'Support endommagé':c.parts[installed][0];
+  const color=damaged?'#be9870':installed===2?'#94b6cb':'#cbb184';
+  let picture=`<rect x="15" y="20" width="870" height="385" rx="16" fill="#f7f8f4"/><path d="M42 350H858" stroke="#9caea7" stroke-width="5"/>
+  <path d="M140 342V236H180V342M470 342V236H510V342" fill="#a1b2b9" stroke="#536f7b" stroke-width="3"/>
+  <text x="48" y="53" style="font-size:21px">Maquette hors tension</text>
+  <text x="82" y="387" style="font-size:20px">${name}${present&&!fixed?' · non fixée':''}</text>
+  <text x="636" y="54" style="font-size:19px">Pièces déposées sur le banc</text>`;
+  if(present){
+   picture+=`<path d="M148 231Q325 ${231+2*dy} 502 231L502 243Q325 ${243+2*dy} 148 243Z" fill="${color}" stroke="#796447" stroke-width="3"/>`;
+   if(installed===1)picture+=`<path d="M154 243Q325 ${255+2*dy} 496 243" fill="none" stroke="#796447" stroke-width="4"/>`;
+   if(damaged)picture+=`<path d="M272 ${231+dy*.85}l9 8-7 4 8 8" fill="none" stroke="#6d4233" stroke-width="4"/><path d="M222 182L271 ${224+dy*.85}" stroke="#8a5040" stroke-width="2"/><text x="164" y="177" style="font-size:18px">Pli visible</text>`;
+   if(fixed)picture+=`<g stroke="#364e57" stroke-width="3"><circle cx="164" cy="233" r="6" fill="#dbe2df"/><path d="M161 233h6"/><circle cx="486" cy="233" r="6" fill="#dbe2df"/><path d="M483 233h6"/></g>`;
+   if(fixed)picture+=blade(325,155+dy);else picture+=blade(741,234);
+   if(loaded)picture+=`<g transform="translate(376 ${196+dy*.87})"><path d="M10 0V-8Q27-23 43-8V0" fill="none" stroke="#4c5865" stroke-width="5"/><rect width="54" height="37" rx="5" fill="#67798b" stroke="#334659" stroke-width="3"/></g><text x="412" y="119" style="font-size:18px">Même charge</text><path d="M442 129L411 ${188+dy*.87}" stroke="#6c7c82" stroke-width="2"/>`;
+   picture+=`<circle cx="325" cy="${243+dy}" r="5" fill="#bd5b32"/><text x="206" y="319" style="font-size:18px">Repère central</text><path d="M297 307L323 ${250+dy}" stroke="#9d6646" stroke-width="2"/>`;
+  }else{picture+=blade(741,234);picture+='<path d="M637 325l105-9 17 10 63-7v12l-69 7-18-9-98 9Z" fill="#be9870" stroke="#796447" stroke-width="3"/>';}
+  if(present&&fixed)picture+='<text x="652" y="160" style="font-size:18px">L’hélice reste immobile.</text><text x="652" y="188" style="font-size:18px">On teste le support.</text>';
+  const reading=ruler.value==='middle'?displacement:0;
+  if(ruler.value!=='away'&&present){
+   const x=ruler.value==='middle'?550:85;
+   picture+=`<path d="M${ruler.value==='middle'?325:164} 243H${x+21}" stroke="#75857d" stroke-width="1.5" stroke-dasharray="5 5"/><rect x="${x}" y="230" width="50" height="96" rx="3" fill="#f4dfa1" stroke="#967e4d" stroke-width="2"/>`;
+   for(let n=0;n<=20;n++){const y=243+n*3;picture+=`<path d="M${x} ${y}h${n%5===0?17:8}" stroke="#685830"/>`;if(n%5===0)picture+=`<text x="${x+20}" y="${y+5}" style="font-size:13px">${n}</text>`;}
+   picture+=`<path d="M${x-12} ${243+reading*3}h30" stroke="#b64d30" stroke-width="3"/><text x="${x}" y="347" style="font-size:17px">mm</text>`;
+  }
+  b.drawing.innerHTML=picture;
+  b.screen.textContent=!present?'SANS SUPPORT':!fixed?'PIÈCE NON FIXÉE':ruler.value==='away'?'RÈGLE RANGÉE':fmt(reading)+' mm';
+  b.status.textContent=!present?'Choisis une pièce saine, puis place-la sur les deux appuis.':!fixed?'La pièce est posée. Fixe-la et repose l’hélice avant de charger.':loaded?'Charge posée. Place la règle et relève le déplacement. Retire la charge avant de démonter.':damaged?'Support endommagé. Fais ton relevé avant le remplacement.':'Pièce remplacée. Refais l’essai avec la même charge et le même point de mesure.';
+  b.drawing.setAttribute('aria-label',`Support d’hélice : ${name}. ${fixed?'Fixations en place.':'Sans fixation.'} ${loaded?'Charge posée.':'Sans charge d’essai.'} ${ruler.value==='away'?'Règle rangée.':'Règle '+(ruler.value==='middle'?'au repère central':'sur l’appui gauche')+'. Lecture : '+b.screen.textContent}`);
+ }
+ ruler.addEventListener('change',draw);part.addEventListener('change',draw);draw();
+ help(p,'Prépare sur papier un tableau « Pièce / Charge / Point mesuré / Déplacement (mm) ». La règle mesure le déplacement par rapport à la position sans charge : 0 mm. Relève avant et après, sans changer le point mesuré. Utilise ensuite la balance pour la masse. Compare toi-même aux exigences de Q1 et Q5.');
+ note(p,'Essai scolaire fictif : la lecture du support endommagé est une donnée supplémentaire de simulation. Les pièces saines reprennent les valeurs du tableau de Q1, sous la charge prévue. La déformation du dessin est amplifiée. La simulation teste seulement le support ; elle ne valide ni le geste réel ni le fonctionnement de l’hélice.');
+},
+
 bottleLeak(p,c){
  const b=setup(p,'Gourde, joint et récipient gradué pour recueillir une fuite');b.drawing.setAttribute('viewBox','0 0 640 420');
  const cap=select(b.controls,'Forme du bouchon',[['smooth','Lisse'],['winged','À ailettes']]),seal=select(b.controls,'Joint',[['none','Sans joint'],['good','Bien placé'],['misplaced','Mal placé']]),closure=select(b.controls,'Fermeture',[['closed','Complètement vissée'],['partial','Partiellement vissée']]),position=select(b.controls,'Position pendant l’essai',[['180','Retournée'],['90','Couchée'],['0','Debout']]),trial=select(b.controls,'Essai',[['0','1'],['1','2'],['2','3']]);
