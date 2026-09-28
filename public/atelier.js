@@ -80,7 +80,62 @@ function fanCircuit(p){
  p.append(E('p','Modèle simplifié, vu de face : les pièces sont espacées pour les repérer. Une courroie détendue n’entraîne plus l’hélice dans ce modèle. Rotation ralentie pour observer les poulies ; aucune vitesse réelle ni autonomie n’est calculée.','hint'));
 }
 
+function irrigationBench(p){
+ p.classList.add('irrigation-bench');
+ p.append(E('p','Q2 · Place trois récipients gradués à la place des pots pour recueillir l’eau. Commence par 8 secondes, puis essaie une autre durée. Change seulement la durée.'));
+ const steps=E('ol');['Choisis la durée de la pompe.','Lance un arrosage et attends son arrêt.','Relève les trois volumes en mL sur ta fiche.','Compare chaque volume aux limites : de 180 à 220 mL inclus.'].forEach(x=>steps.append(E('li',x)));p.append(steps);
+ const duration=select(p,'Durée de l’arrosage',[[8,'8 secondes'],[10,'10 secondes'],[12,'12 secondes']],8);
+ const s=svg(p,'Banc d’arrosage avec une réserve, une pompe, trois tuyaux et trois récipients gradués');s.setAttribute('viewBox','0 0 880 440');
+ s.innerHTML=`<defs><linearGradient id="water-grad" x2="0" y2="1"><stop stop-color="#8bcce4"/><stop offset="1" stop-color="#3d99bd"/></linearGradient></defs>
+ <rect x="10" y="10" width="860" height="420" rx="16" fill="#f6f8f5"/>
+ <rect x="35" y="166" width="125" height="200" rx="15" fill="#d9eced" stroke="#567777" stroke-width="3"/>
+ <path d="M40 235H155V352Q155 362 145 362H50Q40 362 40 352Z" fill="url(#water-grad)"/>
+ <rect x="70" y="151" width="55" height="15" rx="4" fill="#637d7f"/>
+ <path d="M155 310H199M250 310V110H750M370 110V163M560 110V163M750 110V163" fill="none" stroke="#748b86" stroke-width="10" stroke-linejoin="round"/>
+ <rect x="191" y="279" width="64" height="63" rx="12" fill="#55766f" stroke="#34544c" stroke-width="3"/>
+ <circle class="pump-light" cx="223" cy="309" r="12" fill="#d6dcd3"/>
+ <g fill="#23423d" font-family="Arial,sans-serif" font-size="21" text-anchor="middle"><text x="97" y="397">Réserve</text><text x="223" y="369">Pompe</text><text x="560" y="49">Les tuyaux des trois pots</text></g>`;
+ const ns='http://www.w3.org/2000/svg';
+ function node(tag,attrs,txt){const n=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v));if(txt!==undefined)n.textContent=txt;s.append(n);return n}
+ const vessels=[370,560,750].map((x,i)=>{
+  node('text',{x,y:90,'text-anchor':'middle','font-size':21},'Pot '+(i+1));
+  const jet=node('path',{d:`M${x} 168V347`,stroke:'#499dca','stroke-width':5,'stroke-dasharray':'7 5',opacity:0});
+  const water=node('rect',{x:x-47,y:348,width:94,height:0,fill:'url(#water-grad)'});
+  node('path',{d:`M${x-51} 170V353H${x+51}V170`,fill:'none',stroke:'#45635e','stroke-width':3});
+  for(let v=0;v<=300;v+=50){const y=348-v*.55;node('path',{d:`M${x+27} ${y}h24`,stroke:'#2b534b','stroke-width':2});node('text',{x:x+56,y:y+5,'font-size':14},String(v));}
+  node('text',{x:x+67,y:165,'text-anchor':'middle','font-size':15},'mL');
+  const reading=node('text',{x,y:395,'text-anchor':'middle','font-size':23,'font-weight':'bold'},'— mL');return {jet,water,reading};
+ });
+ const status=output(p);status.classList.add('irrigation-reading');
+ let running=false,raf=0;
+ function clear(){vessels.forEach(v=>{v.water.setAttribute('y',348);v.water.setAttribute('height',0);v.jet.setAttribute('opacity',0);v.reading.textContent='— mL'});status.textContent='Prêt. Lance l’arrosage pour obtenir les volumes.';s.querySelector('.pump-light').setAttribute('fill','#d6dcd3')}
+ const start=button(p,'Lancer l’arrosage',()=>{
+  if(running)return;clear();running=true;duration.disabled=true;start.disabled=true;
+  const seconds=+duration.value,values=[18,20,22].map(f=>f*seconds),beg=performance.now();
+  s.querySelector('.pump-light').setAttribute('fill','#74c088');vessels.forEach(v=>v.jet.setAttribute('opacity',1));status.textContent='Arrosage en cours… Le temps démarre avec la pompe.';
+  function frame(now){const f=Math.min(1,(now-beg)/2400);vessels.forEach((v,i)=>{const h=values[i]*f*.55;v.water.setAttribute('height',h);v.water.setAttribute('y',348-h);v.jet.setAttribute('stroke-dashoffset',-f*100)});
+   if(f<1){raf=requestAnimationFrame(frame);return}
+   running=false;duration.disabled=false;start.disabled=false;s.querySelector('.pump-light').setAttribute('fill','#d6dcd3');
+   vessels.forEach((v,i)=>{v.jet.setAttribute('opacity',0);v.reading.textContent=values[i]+' mL'});
+   status.textContent=`Arrosage terminé · durée simulée : ${seconds} s. Pot 1 : ${values[0]} mL ; pot 2 : ${values[1]} mL ; pot 3 : ${values[2]} mL. Note ces valeurs sur ta fiche.`;
+  }raf=requestAnimationFrame(frame);
+ });
+ duration.addEventListener('change',clear);
+ p.append(E('p','Animation accélérée : 8, 10 ou 12 secondes simulées. Les récipients sont vidés avant chaque essai. Le modèle utilise des débits fixes ; il ne prédit pas une installation réelle.','hint'));
+ p.append(E('p','Q3 · Sur papier, choisis la durée à retenir et justifie avec les trois mesures. Décris ensuite le même essai avec du matériel réel. Aucun choix n’est corrigé automatiquement.'));
+ window.addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});clear();
+}
+function irrigationPlanning(p,c){
+ p.append(E('p','Q4 · Ce planning représente un futur projet, pas la durée du cours. Un créneau = 1 heure. Tout le matériel est disponible. Une équipe réalise A, B, D et E ; une autre réalise C.'));
+ table(p,['Tâche','Durée','Pour commencer'],[['A · Préparer le matériel','1 h','Aucune condition'],['B · Monter le circuit','2 h','A terminée'],['C · Préparer l’affiche','2 h','A terminée ; autre équipe'],['D · Tester et régler','1 h','B terminée'],['E · Présenter','1 h','C et D terminées']]);
+ p.append(E('p','Exemple : A occupe le créneau 1. Clique dans les cases des lignes B à E pour placer les tâches le plus tôt possible. Une tâche de 2 heures occupe 2 cases côte à côte. Clique une seconde fois pour effacer.'));
+ const wrap=E('div',undefined,'table-scroll'),t=E('table'),head=E('tr');head.append(E('th','Tâche'));for(let j=1;j<=6;j++)head.append(E('th',String(j)));t.append(head);
+ for(const name of 'ABCDE'){const row=E('tr');row.append(E('th',name));for(let j=1;j<=6;j++){const td=E('td');if(name==='A')td.textContent=j===1?'X':'·';else{const b=button(td,'·',()=>{const yes=b.getAttribute('aria-pressed')==='true';b.setAttribute('aria-pressed',String(!yes));b.textContent=yes?'·':'X'});b.className='slot';b.setAttribute('aria-label',`Tâche ${name}, créneau ${j}`);b.setAttribute('aria-pressed','false')}row.append(td)}t.append(row)}wrap.append(t);p.append(wrap);
+ p.append(E('p','Reporte ta proposition dans la grille papier. Indique quand le projet se termine, quelles tâches se font ensemble et pourquoi le test attend le montage. Il n’y a pas de correction automatique.','hint'));
+}
+
 const widgets={
+irrigation:irrigationBench,irrigationPlanning,
 compare(p,c){const s=select(p,'Critère à regarder',c.criteria.map((x,i)=>[i,x]));const graph=svg(p,'Comparaison des données du dossier');const body=table(p,['Modèle',...c.criteria],c.rows);const draw=()=>{const j=+s.value+1;[...body.rows].forEach(r=>[...r.cells].forEach((td,i)=>td.classList.toggle('selected-column',i===j)));const vals=c.rows.map(r=>parseFloat(String(r[j]).replace(',','.')));if(vals.every(Number.isFinite)){graph.hidden=false;barSVG(graph,c.rows.map(r=>r[0]),vals,c.units?.[j-1]||'')}else{graph.hidden=true}};s.addEventListener('change',draw);draw();p.append(E('p',c.note||'Lis les données sous plusieurs angles. Aucun modèle n’est choisi à ta place.','hint'))},
 rect(p,c){const controls=E('div',undefined,'controls');p.append(controls);const l=range(controls,c.outerLabel+' — longueur ('+c.unit+')',c.minL,c.maxL,c.l),w=range(controls,c.outerLabel+' — largeur ('+c.unit+')',c.minW,c.maxW,c.w);const graph=svg(p,'Deux rectangles cotés, vus de dessus');const draw=()=>{const scale=Math.min(440/Math.max(c.maxL,c.inner[0]),175/Math.max(c.maxW,c.inner[1]));const x=c.center?60+(+l.value-c.inner[0])*scale/2:60,y=c.center?40+(+w.value-c.inner[1])*scale/2:40;graph.innerHTML=`<rect x="60" y="40" width="${+l.value*scale}" height="${+w.value*scale}" fill="#d3e6ce" stroke="#27674f" stroke-width="3"/><rect x="${x}" y="${y}" width="${c.inner[0]*scale}" height="${c.inner[1]*scale}" fill="#31607d33" stroke="#244f75" stroke-dasharray="8 4" stroke-width="3"/><text x="60" y="24">${c.outerLabel} : ${l.value} × ${w.value} ${c.unit}</text><text x="60" y="259">${c.innerLabel} : ${c.inner[0]} × ${c.inner[1]} ${c.unit}</text>`};on([l,w],draw);button(p,'Revenir aux dimensions du dossier',()=>{l.value=c.l;w.value=c.w;l.dispatchEvent(new Event('input'));w.dispatchEvent(new Event('input'))});p.append(E('p','Vert : '+c.outerLabel.toLowerCase()+'. Bleu pointillé : '+c.innerLabel.toLowerCase()+'. Dessin réduit à l’écran ; tracer à la règle sur papier. Les côtés restent dans la même orientation.','hint'))},
 series(p,c){const sel=select(p,c.label||'Série à observer',c.rows.map((r,i)=>[i,r[0]]));const chart=svg(p,'Mesures individuelles de la série');const out=output(p);on([sel],()=>{const r=c.rows[+sel.value];barSVG(chart,r.slice(1).map((_,i)=>'Essai '+(i+1)),r.slice(1),c.unit,c.max);out.textContent='Valeurs du dossier : '+r.slice(1).map(x=>fmt(x)+' '+c.unit).join(' ; ')});p.append(E('p',c.note||'Les valeurs sont fournies par le dossier. Une barre représente un essai ; la page ne donne ni moyenne ni verdict.','hint'))},
