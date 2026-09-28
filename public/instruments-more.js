@@ -101,6 +101,7 @@ workshop(p,c){
 }
 });
 const list=window.instruments||[];
-if(list.length){const intro=E('section',undefined,'bench-intro');intro.append(E('span','LES OUTILS DE CETTE SÉQUENCE','step'),E('h2','Manipule ici. Garde tes résultats sur papier.'),E('p','Choisis tes réglages, fais les essais, relève les mesures avec leurs unités. Note « simulé » sur ta feuille. Si le matériel est disponible, ajoute un essai réel et compare les deux.'));app.append(intro)}
-for(const [i,c] of list.entries()){const p=E('section',undefined,'panel instrument-panel');p.dataset.instrument=c.type;p.id='outil-'+(i+1);p.append(E('span','OUTIL SIMULÉ '+String(i+1).padStart(2,'0'),'step'),E('h2',c.title));if(c.task)p.append(E('p',c.task,'prompt'));T[c.type](p,c);app.append(p)}
+const toolAnchor=document.getElementById("experience-"+C.toolsBeforeExperience);
+if(list.length){const intro=E('section',undefined,'bench-intro');intro.append(E('span','LES OUTILS DE CETTE SÉQUENCE','step'),E('h2','Manipule ici. Garde tes résultats sur papier.'),E('p','Choisis tes réglages, fais les essais, relève les mesures avec leurs unités. Note « simulé » sur ta feuille. Si le matériel est disponible, ajoute un essai réel et compare les deux.'));app.insertBefore(intro,toolAnchor)}
+for(const [i,c] of list.entries()){const p=E('section',undefined,'panel instrument-panel');p.dataset.instrument=c.type;p.id='outil-'+(i+1);p.append(E('span','OUTIL SIMULÉ '+String(i+1).padStart(2,'0'),'step'),E('h2',c.title));if(c.task)p.append(E('p',c.task,'prompt'));T[c.type](p,c);app.insertBefore(p,toolAnchor)}
 })();
