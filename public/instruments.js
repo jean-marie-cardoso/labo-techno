@@ -11,6 +11,79 @@ function help(p,s){const d=E('details',undefined,'instrument-help');d.append(E('
 function blankOnChange(inputs,screen,status){for(const i of inputs)i.addEventListener('input',()=>{screen.textContent='—';status.textContent='Réglage modifié : effectue une nouvelle lecture.'})}
 function ticks(x,y,count,step,scale,vertical=false){let s='';for(let i=0;i<=count;i++){const major=i%Math.max(5,Math.ceil(count/50)*5)===0,len=major?18:9;const at=i*step*scale;if(vertical)s+='<path d="M'+x+' '+(y+at)+'h'+len+'"/>'+ (major?text(x+22,y+at+5,fmt(i*step),14):'');else s+='<path d="M'+(x+at)+' '+y+'v'+len+'"/>'+(major?text(x+at-5,y+35,fmt(i*step),14):'')}return '<g stroke="#29494a" stroke-width="1">'+s+'</g>'}
 const toolsUI={
+elevatorTape(p,c){
+ p.classList.add('elevator-tape');
+ p.append(E('p','1. Choisis une dimension. 2. Accroche le zéro au point de départ. 3. Déroule le ruban jusqu’au point d’arrivée. Lis la graduation et note la mesure sur papier.','tape-instructions'));
+ const b=setup(p,'Cabine d’élévateur et mètre ruban'),obj=choices(b.controls,'Dimension à mesurer',c.items);
+ const hook=button(b.controls,'Accrocher le zéro au départ',()=>{anchored=true;draw()});
+ const length=range(b.controls,'Dérouler le ruban (cm)',0,200,0,1);
+ button(b.controls,'Rentrer le ruban',()=>{length.value=0;length.dispatchEvent(new Event('input'))});
+ let anchored=false;
+ b.drawing.setAttribute('viewBox','0 0 880 570');
+ // Orthographic views keep the measuring tape and the measured surface in the same plane.
+ const label=(x,y,s,size=19)=>text(x,y,s,size);
+ const draw=()=>{
+  const i=+obj.value,dimension=c.items[i][1],vertical=i>=3,k=1.95,amount=+length.value;
+  length.max=vertical?'180':'200';
+  let start,finish,scene='',title='',axisLabel='';
+  const defs='<defs><linearGradient id="lift-metal"><stop stop-color="#9eafb2"/><stop offset=".35" stop-color="#edf2f1"/><stop offset="1" stop-color="#92a3a7"/></linearGradient><linearGradient id="lift-wall" x2="1" y2="1"><stop stop-color="#eff4f1"/><stop offset="1" stop-color="#bccdc9"/></linearGradient></defs>';
+  if(i<3){
+   const x=230,w=dimension*k,y=420,model='ABC'[i],by=438-(i===2?110:78)*k;start=[x,y];finish=[x+w,y];title='Cabine '+model+' · vue de face';axisLabel='Largeur intérieure, entre les deux parois';
+   scene=`<rect x="${x-33}" y="66" width="${w+66}" height="398" rx="8" fill="url(#lift-metal)" stroke="#596e70" stroke-width="4"/>
+   <rect x="${x}" y="99" width="${w}" height="339" fill="url(#lift-wall)" stroke="#677f7d" stroke-width="2"/>
+   <path d="M${x+15} 99V405H${x+w-15}V99M${x} 438L${x+15} 405M${x+w} 438L${x+w-15} 405" fill="none" stroke="#8da39e" stroke-width="2"/>
+   <path d="M${x+23} 260H${x+w-23}" stroke="#607c7a" stroke-width="10"/><path d="M${x+23} 257H${x+w-23}" stroke="#eaf1ec" stroke-width="4"/>
+   <rect x="${x+w-48}" y="${by-20}" width="28" height="64" rx="5" fill="#556e73"/><circle cx="${x+w-34}" cy="${by}" r="8" fill="#bcd2a2" stroke="#edf4e5" stroke-width="2"/>
+   <path d="M${x-33} 454H${x+w+33}" stroke="#536465" stroke-width="8"/>
+   <rect x="${x+w/2-30}" y="76" width="60" height="17" rx="4" fill="#263e42"/><text x="${x+w/2-6}" y="90" style="font-size:14px;fill:white">${model}</text>
+   ${label(x-20,490,'Seuil de la cabine',18)}`;
+  }else if(i===3){
+   start=[440,450];finish=[440,450-dimension*k];title='Cabines A, B et C · vue de dessus';axisLabel='Longueur intérieure, de l’entrée au fond';
+   const left=337.625,right=542.375,w=right-left;
+   scene=`<rect x="${left-18}" y="101" width="${w+36}" height="370" rx="10" fill="url(#lift-metal)" stroke="#607776" stroke-width="4"/>
+   <rect x="${left}" y="118.5" width="${w}" height="331.5" fill="#dce5df" stroke="#92a6a0" stroke-width="2"/>
+   <path d="M${left} 200H${right}M${left} 280H${right}M${left} 360H${right}M390 119V450M490 119V450" stroke="#bdcec3"/>
+   <path d="M${left+15} 150H${right-15}" stroke="#58736e" stroke-width="10"/>
+   <rect x="${right-25}" y="272" width="20" height="50" rx="3" fill="#546c70"/><circle cx="${right-15}" cy="286" r="5" fill="#c7dfab"/>
+   <path d="M${left+25} 450H${right-25}" stroke="#fafcf8" stroke-width="24"/>
+   <path d="M${left+25} 461H${right-25}" stroke="#627978" stroke-width="3"/>${label(405,505,'Entrée',20)}${label(right+25,135,'Fond',18)}`;
+  }else{
+   start=[415,450];finish=[415,450-dimension*k];title=i===4?'Cabine A ou B · paroi de commande':'Cabine C · paroi de commande';axisLabel='Hauteur du centre du bouton, depuis le sol';
+   const by=finish[1];
+   scene=`<rect x="236" y="62" width="355" height="388" fill="url(#lift-wall)" stroke="#819792" stroke-width="3"/>
+   <rect x="236" y="62" width="23" height="388" fill="url(#lift-metal)"/><path d="M236 450H650L710 492H180Z" fill="#b5c1b9" stroke="#6d8279" stroke-width="3"/>
+   <path d="M278 450L257 490M354 450L350 490M500 450L527 490M577 450L618 490" stroke="#91a698"/>
+   <rect x="465" y="${by-50}" width="73" height="135" rx="12" fill="url(#lift-metal)" stroke="#4e6469" stroke-width="3"/>
+   <circle cx="500" cy="${by}" r="21" fill="#eef5e7" stroke="#47665c" stroke-width="5"/>
+   <path d="M493 ${by+4}L500 ${by-6}L507 ${by+4}" fill="none" stroke="#47665c" stroke-width="3"/>
+   <circle cx="500" cy="${by+53}" r="10" fill="#cbad7c" stroke="#657266"/>
+   <path d="M415 ${by}H475" stroke="#396e77" stroke-width="2" stroke-dasharray="5 5"/>${label(550,by+7,'Bouton',18)}${label(602,470,'Sol',18)}`;
+  }
+  const [sx,sy]=start,[tx,ty]=finish,end=vertical?[sx,sy-amount*k]:[sx+amount*k,sy];
+  let tape='';
+  if(anchored){
+   // Tape runs upward for height/depth; its hook stays at zero. Housing moves with the free end.
+   const rotation=vertical?-90:0;let marks='';
+   for(let cm=0;cm<=amount;cm++){const xx=cm*k,major=cm%10===0;marks+=`<path d="M${xx} -15v${major?15:cm%5===0?10:5}" stroke="#2d3835" stroke-width="${major?1.5:1}"/>`;if(major)marks+=label(xx+2,12,String(cm),12)}
+   tape=`<g transform="translate(${sx} ${sy}) rotate(${rotation})"><rect x="0" y="-17" width="${amount*k}" height="34" fill="#f2cf54" stroke="#9e812a"/>${marks}<path d="M0 -21V22H9" fill="none" stroke="#51656c" stroke-width="5"/>
+   <rect x="${amount*k}" y="-27" width="65" height="56" rx="13" fill="#d9a82e" stroke="#4c5550" stroke-width="4"/><rect x="${amount*k+15}" y="-13" width="37" height="29" rx="6" fill="#324d4c"/>
+   <path d="M${amount*k} -23V24" stroke="#bc4538" stroke-width="3"/></g>`;
+  }else{
+   tape='<rect x="690" y="348" width="93" height="78" rx="20" fill="#d9a82e" stroke="#465550" stroke-width="5"/><rect x="716" y="366" width="44" height="37" rx="8" fill="#344d4a"/>'+label(679,454,'Mètre ruban',17);
+  }
+  const pin=(x,y,color)=>`<circle cx="${x}" cy="${y}" r="7" fill="white" stroke="${color}" stroke-width="3"/>`;
+  b.drawing.innerHTML=defs+label(35,32,title,23)+scene+tape+pin(sx,sy,'#27675e')+pin(tx,ty,'#a34436')+
+   label(vertical?sx-85:sx-78,sy+(vertical?28:-40),'Départ',17)+label(vertical?tx-90:tx+10,ty-28,'Arrivée',17)+label(35,548,axisLabel,20);
+  b.drawing.setAttribute('aria-label',title+'. '+axisLabel+'. '+(anchored?'Ruban déroulé de '+amount+' cm.':'Ruban à accrocher au départ.'));
+  hook.disabled=anchored;length.disabled=!anchored;
+  b.screen.textContent=anchored?'Ruban déroulé : '+amount+' cm':'Ruban non accroché';
+  b.status.textContent=anchored?'Amène le trait rouge du boîtier sur le point « Arrivée ». La graduation à ce trait se lit en centimètres.':'Le point « Départ » indique où accrocher le zéro. Le point « Arrivée » indique la fin de la dimension à mesurer.';
+ };
+ obj.addEventListener('input',()=>{anchored=false;length.value=0;length.dispatchEvent(new Event('input'))});length.addEventListener('input',draw);
+ draw();help(p,'Le crochet métallique marque le zéro. Le ruban doit être tendu et aligné sur la dimension. Pour la hauteur du bouton, pars du sol et vise le centre du bouton, pas le bas de sa plaque. Tu peux déplacer le curseur au clavier avec les flèches (1 cm par appui).');
+ note(p,'Cabines fictives du dossier. Vues simplifiées sans perspective sur la mesure ; le dessin est réduit à l’écran. Ne mesure pas ton écran avec un vrai mètre. Aucune conformité n’est décidée à ta place.');
+},
+
 length(p,c){
  const b=setup(p,'Objet, règle graduée et deux repères de lecture'),obj=choices(b.controls,'Dimension à mesurer',c.items),unit=c.unit||'mm';
  const zero=range(b.controls,'Décaler le zéro ('+unit+')',-c.max/5,c.max/5,0,c.step||1),angle=select(b.controls,'Position de la règle',[['parallel','Parallèle au côté'],['tilted','En biais']]);
