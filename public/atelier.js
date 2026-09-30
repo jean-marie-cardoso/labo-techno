@@ -134,7 +134,47 @@ function irrigationPlanning(p,c){
  p.append(E('p','Reporte ta proposition dans la grille papier. Indique quand le projet se termine, quelles tâches se font ensemble et pourquoi le test attend le montage. Il n’y a pas de correction automatique.','hint'));
 }
 
+// Object silhouettes shared by the comparison and measurement benches.
+function phoneObject(x,y,ow,oh){
+ const portrait=oh>ow,w=portrait?oh:ow,h=portrait?ow:oh,landscape=true;
+ let face=`<rect x="0" y="0" width="${w}" height="${h}" rx="${Math.min(w,h)*.12}" fill="#313c45" stroke="#111e28" stroke-width="3"/>
+ <rect x="5" y="5" width="${w-10}" height="${h-10}" rx="${Math.min(w,h)*.1}" fill="#91b9c6" stroke="#aab9ba" stroke-width="2"/>
+ <path d="M${w*.12} ${h*.15}Q${w*.5} ${h*.55} ${w*.87} ${h*.17}V${h*.8}Q${w*.4} ${h*.65} ${w*.12} ${h*.85}Z" fill="#b9d4d5" opacity=".6"/>
+ <rect x="${w*.32}" y="${h*.42}" width="${w*.36}" height="${h*.14}" rx="4" fill="none" stroke="#345765" stroke-width="3"/>
+ <rect x="${w*.68}" y="${h*.46}" width="${w*.03}" height="${h*.06}" rx="1" fill="#345765"/>
+ <rect x="${w*.34}" y="${h*.44}" width="${w*.11}" height="${h*.1}" fill="#345765"/>`;
+ face+=landscape?`<rect x="9" y="${h*.36}" width="7" height="${h*.27}" rx="4" fill="#283841"/><circle cx="12" cy="${h*.26}" r="3" fill="#243642"/>`:`<rect x="${w*.34}" y="9" width="${w*.32}" height="7" rx="4" fill="#283841"/><circle cx="${w*.24}" cy="12" r="3" fill="#243642"/>`;
+ return `<g class="phone-object" transform="${portrait?`translate(${x+ow} ${y}) rotate(90)`:`translate(${x} ${y})`}">${face}</g>`;
+}
+function chargingSupport(x,y,w,h){
+ return `<g class="support-object" transform="translate(${x} ${y})"><rect width="${w}" height="${h}" rx="10" fill="#d4c6ad" stroke="#6c6250" stroke-width="3"/>
+ <rect x="7" y="7" width="${w-14}" height="${h-14}" rx="7" fill="#eee7d8" stroke="#b1a58f" stroke-width="2"/>
+ <path d="M12 ${h-13}H${w-12}" stroke="#c5b695" stroke-width="8"/>
+ <path d="M${w-20} 11V${h-20}" stroke="#e1d8c5" stroke-width="3"/>
+ <rect x="${w/2-14}" y="${h-12}" width="28" height="12" rx="3" fill="#71817b"/>
+ <path d="M${w/2} ${h}v15q0 20 30 20h35" fill="none" stroke="#506562" stroke-width="5"/>
+ <rect x="${w/2+65}" y="${h+28}" width="23" height="14" rx="3" fill="#303e40"/><rect x="${w/2+88}" y="${h+31}" width="9" height="8" fill="#a7b7b5"/></g>`;
+}
+function phoneFit(p,c){
+ p.classList.add('phone-fit');
+ p.append(E('p','Observe le téléphone et la surface du support, vus de dessus. Pose le téléphone, puis change une seule dimension du support. Le téléphone garde sa taille.'));
+ const controls=E('div',undefined,'controls');p.append(controls);
+ const l=range(controls,'Support — longueur (cm)',c.minL,c.maxL,c.l,.5),w=range(controls,'Support — largeur (cm)',c.minW,c.maxW,c.w,.5);
+ const placed=toggle(p,'Poser le téléphone sur le support'),graph=svg(p,'Téléphone et support de recharge, vus de dessus');graph.setAttribute('viewBox','0 0 880 530');
+ const draw=()=>{const k=20,sw=+l.value*k,sh=+w.value*k,pw=15*k,ph=7*k;
+ const sx=placed.checked?440-sw/2:65,sy=placed.checked?245-sh/2:230-sh/2;
+ const px=placed.checked?440-pw/2:505,py=placed.checked?245-ph/2:230-ph/2;
+ graph.innerHTML=`<rect x="12" y="12" width="856" height="503" rx="18" fill="#f1f3ed"/>
+ <text x="40" y="53" style="font-size:22px">${placed.checked?'Téléphone posé au centre':'Objets séparés · même échelle'}</text>`+chargingSupport(sx,sy,sw,sh)+phoneObject(px,py,pw,ph)+
+ (placed.checked?`<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" rx="10" fill="none" stroke="#a56324" stroke-width="3" stroke-dasharray="8 5"/>`:`<text x="65" y="410">Support de recharge</text><text x="505" y="410">Téléphone</text>`)+
+ `<text x="40" y="456" style="font-size:20px">Support : ${fmt(+l.value)} × ${fmt(+w.value)} cm</text><text x="40" y="489" style="font-size:20px">Téléphone : 15 × 7 cm${placed.checked?' · Pointillés : contour du support':''}</text>`;
+ };
+ on([l,w,placed],draw);button(p,'Revenir au support du dossier',()=>{l.value=c.l;w.value=c.w;placed.checked=false;l.dispatchEvent(new Event('input'));w.dispatchEvent(new Event('input'))});
+ p.append(E('p','Le support représente une surface de pose. La simulation compare les dimensions ; elle ne teste pas la stabilité. Sur papier, dessine ton choix et explique si le téléphone dépasse.','hint'));
+}
+
 const widgets={
+phoneFit,
 irrigation:irrigationBench,irrigationPlanning,
 compare(p,c){const s=select(p,'Critère à regarder',c.criteria.map((x,i)=>[i,x]));const graph=svg(p,'Comparaison des données du dossier');const body=table(p,['Modèle',...c.criteria],c.rows);const draw=()=>{const j=+s.value+1;[...body.rows].forEach(r=>[...r.cells].forEach((td,i)=>td.classList.toggle('selected-column',i===j)));const vals=c.rows.map(r=>parseFloat(String(r[j]).replace(',','.')));if(vals.every(Number.isFinite)){graph.hidden=false;barSVG(graph,c.rows.map(r=>r[0]),vals,c.units?.[j-1]||'')}else{graph.hidden=true}};s.addEventListener('change',draw);draw();p.append(E('p',c.note||'Lis les données sous plusieurs angles. Aucun modèle n’est choisi à ta place.','hint'))},
 rect(p,c){const controls=E('div',undefined,'controls');p.append(controls);const l=range(controls,c.outerLabel+' — longueur ('+c.unit+')',c.minL,c.maxL,c.l),w=range(controls,c.outerLabel+' — largeur ('+c.unit+')',c.minW,c.maxW,c.w);const graph=svg(p,'Deux rectangles cotés, vus de dessus');const draw=()=>{const scale=Math.min(440/Math.max(c.maxL,c.inner[0]),175/Math.max(c.maxW,c.inner[1]));const x=c.center?60+(+l.value-c.inner[0])*scale/2:60,y=c.center?40+(+w.value-c.inner[1])*scale/2:40;graph.innerHTML=`<rect x="60" y="40" width="${+l.value*scale}" height="${+w.value*scale}" fill="#d3e6ce" stroke="#27674f" stroke-width="3"/><rect x="${x}" y="${y}" width="${c.inner[0]*scale}" height="${c.inner[1]*scale}" fill="#31607d33" stroke="#244f75" stroke-dasharray="8 4" stroke-width="3"/><text x="60" y="24">${c.outerLabel} : ${l.value} × ${w.value} ${c.unit}</text><text x="60" y="259">${c.innerLabel} : ${c.inner[0]} × ${c.inner[1]} ${c.unit}</text>`};on([l,w],draw);button(p,'Revenir aux dimensions du dossier',()=>{l.value=c.l;w.value=c.w;l.dispatchEvent(new Event('input'));w.dispatchEvent(new Event('input'))});p.append(E('p','Vert : '+c.outerLabel.toLowerCase()+'. Bleu pointillé : '+c.innerLabel.toLowerCase()+'. Dessin réduit à l’écran ; tracer à la règle sur papier. Les côtés restent dans la même orientation.','hint'))},

@@ -11,6 +11,38 @@ function help(p,s){const d=E('details',undefined,'instrument-help');d.append(E('
 function blankOnChange(inputs,screen,status){for(const i of inputs)i.addEventListener('input',()=>{screen.textContent='—';status.textContent='Réglage modifié : effectue une nouvelle lecture.'})}
 function ticks(x,y,count,step,scale,vertical=false){let s='';for(let i=0;i<=count;i++){const major=i%Math.max(5,Math.ceil(count/50)*5)===0,len=major?18:9;const at=i*step*scale;if(vertical)s+='<path d="M'+x+' '+(y+at)+'h'+len+'"/>'+ (major?text(x+22,y+at+5,fmt(i*step),14):'');else s+='<path d="M'+(x+at)+' '+y+'v'+len+'"/>'+(major?text(x+at-5,y+35,fmt(i*step),14):'')}return '<g stroke="#29494a" stroke-width="1">'+s+'</g>'}
 const toolsUI={
+phoneMeasure(p,c){
+ p.classList.add('phone-measure');
+ p.append(E('p','Choisis l’objet et la dimension. Place le zéro au bord de l’objet, puis déplace le repère rouge jusqu’à l’autre bord. Relève la lecture en centimètres sur ta feuille.'));
+ const b=setup(p,'Téléphone ou support de recharge avec une règle graduée'),obj=choices(b.controls,'Dimension à mesurer',c.items);
+ let ready=false;
+ const place=button(b.controls,'Placer le zéro au bord gauche',()=>{ready=true;draw()});
+ const cursor=range(b.controls,'Déplacer le repère de lecture (cm)',0,20,0,.1);
+ b.drawing.setAttribute('viewBox','0 0 880 640');
+ const draw=()=>{
+  const i=+obj.value,isPhone=i<2,isWidth=i%2===1,k=26,measure=c.items[i][1],cross=isPhone?(isWidth?15:7):(isWidth?12:6);
+  const x=140,width=measure*k,height=cross*k,y=85+(390-height)/2,ry=515;
+  let scene=(isPhone?phoneObject:chargingSupport)(x,y,width,height);
+  scene+='<path d="M'+x+' '+(y+height)+'V'+(ry+12)+'M'+(x+width)+' '+(y+height)+'V'+(ry+12)+'" stroke="#71938d" stroke-dasharray="5 5" stroke-width="2"/>';
+  const rulerX=ready?x:x+70;
+  scene+=`<rect x="${rulerX-5}" y="${ry}" width="530" height="67" rx="5" fill="#e1e8e5" stroke="#60746e" stroke-width="2"/>`;
+  for(let mm=0;mm<=200;mm++){
+   const xx=rulerX+mm*k/10,major=mm%10===0;
+   scene+=`<path d="M${xx} ${ry+3}v${major?22:mm%5===0?16:9}" stroke="#233e39" stroke-width="${major?1.5:1}"/>`;
+   if(major)scene+=text(xx-4,ry+44,String(mm/10),15);
+  }
+  scene+=text(rulerX+475,ry+61,'cm',14);
+  if(ready){const cx=rulerX+ +cursor.value*k;scene+=`<path d="M${cx} ${ry-14}V${ry+71}" stroke="#af4939" stroke-width="3"/><path d="M${cx-7} ${ry-14}h14l-7 10Z" fill="#af4939"/>`;}
+  b.drawing.innerHTML=text(35,35,c.items[i][0]+' · vue de dessus',23)+scene+text(35,617,'Objet et règle réduits à l’écran · graduations en cm',18);
+  cursor.disabled=!ready;place.disabled=ready;
+  b.screen.textContent=ready?'Repère : '+fmt(+cursor.value)+' cm':'Règle à placer';
+  b.status.textContent=ready?'Place le trait rouge sous le bord droit de l’objet. Les pointillés prolongent ses deux bords jusqu’à la règle.':'Clique sur « Placer le zéro au bord gauche ». Pour le support, mesure la surface de pose, sans le câble.';
+ };
+ obj.addEventListener('input',()=>{ready=false;cursor.value=0;cursor.dispatchEvent(new Event('input'))});cursor.addEventListener('input',draw);draw();
+ help(p,'Le zéro doit être aligné avec le premier bord. Lis la graduation sous le second bord. Entre deux centimètres, chaque petite graduation vaut 1 mm, soit 0,1 cm. Les flèches du clavier déplacent le repère de 1 mm.');
+ note(p,'Objets fictifs aux dimensions de la fiche. Une vue de dessus permet de mesurer sans perspective. Ne mesure pas ton écran avec une vraie règle.');
+},
+
 elevatorTape(p,c){
  p.classList.add('elevator-tape');
  p.append(E('p','1. Choisis une dimension. 2. Accroche le zéro au point de départ. 3. Déroule le ruban jusqu’au point d’arrivée. Lis la graduation et note la mesure sur papier.','tape-instructions'));
