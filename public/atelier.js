@@ -173,7 +173,59 @@ function phoneFit(p,c){
  p.append(E('p','Le support représente une surface de pose. La simulation compare les dimensions ; elle ne teste pas la stabilité. Sur papier, dessine ton choix et explique si le téléphone dépasse.','hint'));
 }
 
+function readingLampSide(x,y,scale=1){
+ return `<g class="lamp-side" transform="translate(${x} ${y}) scale(${scale})">
+ <ellipse cx="123" cy="312" rx="91" ry="13" fill="#c8d2c7"/>
+ <path d="M46 292Q44 278 62 274H174Q191 278 191 292V305H46Z" fill="#6c9690" stroke="#335653" stroke-width="4"/>
+ <rect x="146" y="280" width="23" height="10" rx="5" fill="#dbe9d4"/>
+ <path d="M106 276V180Q106 163 122 151L170 111Q180 99 170 83" fill="none" stroke="#344c4c" stroke-width="12"/>
+ <path d="M106 273V180Q106 165 125 151L173 110" fill="none" stroke="#9dbaae" stroke-width="5"/>
+ <circle cx="109" cy="177" r="13" fill="#668d83" stroke="#344c4c" stroke-width="3"/>
+ <path d="M129 70Q165 40 193 62L222 96L138 134L122 94Z" fill="#66948b" stroke="#335653" stroke-width="4"/>
+ <ellipse cx="179" cy="117" rx="47" ry="12" transform="rotate(-24 179 117)" fill="#f7ebba" stroke="#335653" stroke-width="3"/>
+ <path d="M148 138L101 241H235L211 110" fill="#eedc9833"/>
+ </g>`;
+}
+function readingLampBase(x,y,ow,oh){
+ const portrait=oh>ow,w=portrait?oh:ow,h=portrait?ow:oh;
+ return `<g class="lamp-base" transform="${portrait?`translate(${x+ow} ${y}) rotate(90)`:`translate(${x} ${y})`}">
+ <rect width="${w}" height="${h}" rx="14" fill="#678f89" stroke="#335953" stroke-width="3"/>
+ <rect x="6" y="6" width="${w-12}" height="${h-12}" rx="10" fill="#82a79b" stroke="#aac5b4" stroke-width="2"/>
+ <circle cx="${w*.26}" cy="${h*.3}" r="${h*.13}" fill="#385a53" stroke="#c6d5c7" stroke-width="3"/>
+ <path d="M${w*.26} ${h*.3}H${w*.6}" stroke="#3c5b57" stroke-width="10"/>
+ <rect x="${w*.54}" y="${h*.16}" width="${w*.35}" height="${h*.27}" rx="9" fill="#5a837a" stroke="#345750" stroke-width="3"/>
+ <path d="M${w*.56} ${h*.4}H${w*.86}" stroke="#f2e6b4" stroke-width="4"/>
+ <circle cx="${w*.8}" cy="${h*.78}" r="${h*.065}" fill="#e5edda" stroke="#3c6056" stroke-width="2"/>
+ <path d="M${w*.8} ${h*.73}v${h*.05}" stroke="#426758" stroke-width="2"/>
+ </g>`;
+}
+function lampFootprint(p,c){
+ p.classList.add('lamp-footprint');
+ p.append(E('p','D1–D3 · Pose la lampe sur la zone libre de la table. Observe sa base, vue de dessus. Garde les côtés de la base dans le même sens que ceux de la zone.'));
+ const controls=E('div',undefined,'controls');p.append(controls);
+ const l=range(controls,'Zone — longueur (cm)',8,20,15,.5),w=range(controls,'Zone — largeur (cm)',4,12,10,.5);
+ const set=(a,b)=>{l.value=a;w.value=b;l.dispatchEvent(new Event('input'));w.dispatchEvent(new Event('input'))};
+ button(p,'Zone du dossier : 15 × 10 cm',()=>set(15,10));button(p,'Autre zone : 11 × 10 cm',()=>set(11,10));
+ const placed=toggle(p,'Poser la lampe dans la zone',true),graph=svg(p,'Lampe de lecture et sa base sur une table');graph.setAttribute('viewBox','0 0 1000 570');
+ const draw=()=>{const k=23,zw=+l.value*k,zh=+w.value*k,bw=12*k,bh=8*k,cx=665,cy=285;
+ graph.innerHTML=`<rect x="8" y="10" width="984" height="545" rx="18" fill="#f3f5ee"/>
+ <text x="28" y="46" style="font-size:22px">Lampe L</text>`+readingLampSide(15,80,.95)+
+ `<text x="28" y="441" style="font-size:17px">Vue de côté</text><text x="28" y="468" style="font-size:16px">Repérage, sans échelle</text>
+ <path d="M330 75V485" stroke="#c3d1c5" stroke-width="2"/>
+ <rect x="380" y="110" width="580" height="365" rx="13" fill="#d9c8a5" stroke="#877c63" stroke-width="3"/>
+ <path d="M400 145H940M400 443H940" stroke="#c9b58f" stroke-width="3"/>
+ <text x="390" y="75" style="font-size:22px">Table · vue de dessus</text>
+ <rect x="${cx-zw/2}" y="${cy-zh/2}" width="${zw}" height="${zh}" fill="#f7f1df" stroke="#90632c" stroke-width="3" stroke-dasharray="9 5"/>`+
+ (placed.checked?readingLampBase(cx-bw/2,cy-bh/2,bw,bh):'')+
+ `<rect x="${cx-zw/2}" y="${cy-zh/2}" width="${zw}" height="${zh}" fill="none" stroke="#90632c" stroke-width="3" stroke-dasharray="9 5"/>
+ <text x="380" y="504" style="font-size:19px">Pointillés : zone disponible · ${fmt(+l.value)} × ${fmt(+w.value)} cm</text>
+ <text x="380" y="538" style="font-size:19px">Base de la lampe : 12 × 8 cm</text>`;
+ };on([l,w,placed],draw);
+ p.append(E('p','Compare les deux dimensions. Sur papier, trace la zone et la base à taille réelle, puis justifie ton choix. Le dessin de l’écran est réduit ; il ne prédit pas la stabilité réelle de la lampe.','hint'));
+}
+
 const widgets={
+lampFootprint,
 phoneFit,
 irrigation:irrigationBench,irrigationPlanning,
 compare(p,c){const s=select(p,'Critère à regarder',c.criteria.map((x,i)=>[i,x]));const graph=svg(p,'Comparaison des données du dossier');const body=table(p,['Modèle',...c.criteria],c.rows);const draw=()=>{const j=+s.value+1;[...body.rows].forEach(r=>[...r.cells].forEach((td,i)=>td.classList.toggle('selected-column',i===j)));const vals=c.rows.map(r=>parseFloat(String(r[j]).replace(',','.')));if(vals.every(Number.isFinite)){graph.hidden=false;barSVG(graph,c.rows.map(r=>r[0]),vals,c.units?.[j-1]||'')}else{graph.hidden=true}};s.addEventListener('change',draw);draw();p.append(E('p',c.note||'Lis les données sous plusieurs angles. Aucun modèle n’est choisi à ta place.','hint'))},

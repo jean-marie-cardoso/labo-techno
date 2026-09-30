@@ -11,6 +11,28 @@ function help(p,s){const d=E('details',undefined,'instrument-help');d.append(E('
 function blankOnChange(inputs,screen,status){for(const i of inputs)i.addEventListener('input',()=>{screen.textContent='—';status.textContent='Réglage modifié : effectue une nouvelle lecture.'})}
 function ticks(x,y,count,step,scale,vertical=false){let s='';for(let i=0;i<=count;i++){const major=i%Math.max(5,Math.ceil(count/50)*5)===0,len=major?18:9;const at=i*step*scale;if(vertical)s+='<path d="M'+x+' '+(y+at)+'h'+len+'"/>'+ (major?text(x+22,y+at+5,fmt(i*step),14):'');else s+='<path d="M'+(x+at)+' '+y+'v'+len+'"/>'+(major?text(x+at-5,y+35,fmt(i*step),14):'')}return '<g stroke="#29494a" stroke-width="1">'+s+'</g>'}
 const toolsUI={
+lampMeasure(p,c){
+ p.classList.add('lamp-measure');
+ p.append(E('p','V1 · Choisis la base ou la zone libre de la table. Place le zéro au premier bord, puis amène le repère rouge au second bord. Note la lecture en centimètres sur ta feuille.'));
+ const b=setup(p,'Lampe de lecture, base ou zone libre et règle graduée'),obj=choices(b.controls,'Dimension à mesurer',c.items);let ready=false;
+ const place=button(b.controls,'Placer le zéro au bord gauche',()=>{ready=true;draw()});
+ const cursor=range(b.controls,'Déplacer le repère de lecture (cm)',0,20,0,.1);b.drawing.setAttribute('viewBox','0 0 1000 690');
+ const draw=()=>{
+  const i=+obj.value,isBase=i<2,isWidth=i%2===1,k=25,size=c.items[i][1],cross=isBase?(isWidth?12:8):(isWidth?15:10),x=115,width=size*k,height=cross*k,y=95+(375-height)/2,ry=515;
+  let scene=`<rect x="52" y="70" width="560" height="421" rx="12" fill="#d9c8a5" stroke="#8a7b61" stroke-width="3"/><path d="M70 87H590M70 476H590" stroke="#c8b28b" stroke-width="3"/>`;
+  scene+=isBase?readingLampBase(x,y,width,height):`<rect class="measured-zone" x="${x}" y="${y}" width="${width}" height="${height}" fill="#f8f2e3" stroke="#91692d" stroke-width="3" stroke-dasharray="8 5"/><text x="${x+12}" y="${y+height/2}" style="font-size:19px">Zone libre</text>`;
+  scene+=`<path d="M${x} ${y+height}V${ry+4}M${x+width} ${y+height}V${ry+4}" stroke="#568078" stroke-dasharray="5 5" stroke-width="2"/>`;
+  const rx=ready?x:x+55;scene+=`<rect x="${rx-5}" y="${ry}" width="510" height="68" rx="4" fill="#e1e8e5" stroke="#61746e" stroke-width="2"/>`;
+  for(let mm=0;mm<=200;mm++){const xx=rx+mm*k/10,major=mm%10===0;scene+=`<path d="M${xx} ${ry+3}v${major?22:mm%5===0?16:9}" stroke="#284139" stroke-width="${major?1.5:1}"/>`;if(major)scene+=text(xx-4,ry+44,String(mm/10),15)}
+  scene+=text(rx+464,ry+62,'cm',14);
+  if(ready){const xx=rx+ +cursor.value*k;scene+=`<path d="M${xx} ${ry-13}V${ry+71}" stroke="#af4939" stroke-width="3"/><path d="M${xx-7} ${ry-14}h14l-7 10Z" fill="#af4939"/>`;}
+  b.drawing.innerHTML=text(30,35,c.items[i][0]+' · vue de dessus',23)+scene+readingLampSide(680,110,.88)+text(690,440,'Lampe L · repérage',18)+text(690,466,'Vue de côté',17)+text(30,629,isBase?'Mesure le contour de la base, sans inclure le bras.':'Mesure la zone délimitée sur la table, pas toute la table.',19)+text(30,661,'Objet et règle réduits à l’écran · graduations en cm',17);
+  cursor.disabled=!ready;place.disabled=ready;b.screen.textContent=ready?'Repère : '+fmt(+cursor.value)+' cm':'Règle à placer';b.status.textContent=ready?'Aligne le trait rouge avec le pointillé du bord droit. Relève la mesure avec son unité.':'Clique sur « Placer le zéro au bord gauche » pour commencer.';
+ };obj.addEventListener('input',()=>{ready=false;cursor.value=0;cursor.dispatchEvent(new Event('input'))});cursor.addEventListener('input',draw);draw();
+ help(p,'Le zéro doit être aligné avec le premier bord. Lis la graduation sous le second bord. Chaque petite graduation vaut 1 mm, soit 0,1 cm. Les flèches du clavier déplacent le repère de 1 mm.');
+ note(p,'Dimensions fictives de la fiche. La vue de dessus évite la déformation par la perspective. Ne mesure pas ton écran avec une vraie règle.');
+},
+
 phoneMeasure(p,c){
  p.classList.add('phone-measure');
  p.append(E('p','Choisis l’objet et la dimension. Place le zéro au bord de l’objet, puis déplace le repère rouge jusqu’à l’autre bord. Relève la lecture en centimètres sur ta feuille.'));
