@@ -17,3 +17,22 @@
 @media(max-width:900px){.example-lamps{grid-template-columns:repeat(10,minmax(0,1fr));gap:3px}.example-lamp{padding:2px}.example-choices button{flex:1 1 100%}}
 
 .fan-controls{display:flex;flex-wrap:wrap;gap:10px 25px;margin:16px 0}.fan-controls .toggle{margin:6px 0;font-size:16px}.fan-drawing{overflow-x:auto;border:1px solid #dbe3de;border-radius:12px;background:#fff}.fan-drawing svg{display:block;width:100%;min-width:620px;height:auto;margin:0;max-height:none}.fan-state{margin-top:18px}.fan-experiment .hint{max-width:850px}
+
+/* S04 : observer la fermeture avant et après essai. */
+.closure-view{border:1px solid #d4dfd7;border-radius:14px;background:#f7faf6;margin:18px 0;overflow:hidden}
+.closure-view svg{max-height:480px;margin:0 auto;overflow:hidden}
+.closure-bottle{transform-origin:320px 235px;transition:transform .55s ease}
+.closure-screw{transition:transform .55s ease}
+.closure-lid{transform-origin:363px 136px;transition:transform .55s ease}
+.closure-actions{display:flex;flex-wrap:wrap;gap:10px}.closure-actions button{margin:0}
+.closure-steps{font-size:16px;padding-left:24px}.closure-steps li{margin:7px 0}
+.closure-state{font-size:16px;margin-bottom:8px}.closure-observation{margin-top:8px}
+.closure-turning .closure-screw>rect:nth-child(2){animation:closure-ribs .6s ease}
+.closure-leaking .closure-drop{animation:closure-water 1s linear infinite}.closure-drop.d2{animation-delay:-.35s}.closure-drop.d3{animation-delay:-.7s}
+@keyframes closure-water{from{transform:translateY(0);opacity:1}to{transform:translateY(65px);opacity:0}}
+@keyframes closure-ribs{0%{opacity:1}50%{opacity:.25}100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.closure-bottle,.closure-screw,.closure-lid{transition:none}.closure-turning .closure-screw>rect:nth-child(2),.closure-leaking .closure-drop{animation:none}}
+@media(max-width:680px){.closure-actions button{width:100%}.closure-view svg text{font-size:18px}}
+
+.closure-cap-mark{transition:transform .5s ease-in-out}
+@media(prefers-reduced-motion:reduce){.closure-cap-mark{transition:none}}

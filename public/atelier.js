@@ -224,7 +224,66 @@ function lampFootprint(p,c){
  p.append(E('p','Compare les deux dimensions. Sur papier, trace la zone et la base à taille réelle, puis justifie ton choix. Le dessin de l’écran est réduit ; il ne prédit pas la stabilité réelle de la lampe.','hint'));
 }
 
+function bottleClosure(p){
+ p.classList.add('bottle-closure');
+ p.append(E('p','Q3 · Pour chaque bouchon : ferme en partie, retourne la gourde et observe. Remets-la debout, termine la fermeture, puis recommence. Garde tes relevés sur papier.'));
+ const steps=E('ol',undefined,'closure-steps');for(const t of ['Choisis un bouchon et réalise un premier mouvement.','Retourne la gourde ; observe l’eau dans le bac.','Remets debout, termine la fermeture et reteste.'])steps.append(E('li',t));p.append(steps);
+ const choice=select(p,'Bouchon à tester',[['screw','Bouchon vissé'],['clip','Bouchon clipsé']]);
+ const view=E('div',undefined,'closure-view');p.append(view);const drawing=svg(view,'Gourde avec bouchon manipulable et bac pour observer les fuites');drawing.setAttribute('viewBox','0 0 640 450');
+ drawing.innerHTML=`<defs>
+ <linearGradient id="closure-body" x1="0" x2="1"><stop stop-color="#5faca4"/><stop offset=".25" stop-color="#c3e7e2"/><stop offset=".6" stop-color="#80c1b8"/><stop offset="1" stop-color="#33776f"/></linearGradient>
+ <linearGradient id="closure-cap" x1="0" x2="0" y2="1"><stop stop-color="#4a696c"/><stop offset=".5" stop-color="#29474d"/><stop offset="1" stop-color="#172f36"/></linearGradient>
+ <pattern id="closure-ribs" width="12" height="35" patternUnits="userSpaceOnUse"><path d="M4 1V33" stroke="#9aadad" stroke-width="2"/></pattern>
+ </defs>
+ <rect width="640" height="450" rx="16" fill="#f7faf6"/>
+ <g class="closure-bottle">
+ <path d="M275 128V178C275 191 249 193 248 216V325Q248 351 274 351H366Q392 351 392 325V216C391 193 365 191 365 178V128Z" fill="url(#closure-body)" stroke="#285e59" stroke-width="3"/>
+ <path d="M258 224V321Q258 335 273 337H367Q382 335 382 321V224Z" fill="#4caee344"/>
+ <path d="M277 139H362M277 150H362M277 161H362M277 173H362" stroke="#386e69" stroke-width="3"/>
+ <path d="M272 212V319" stroke="#e4fbf8" stroke-width="5" stroke-linecap="round"/>
+ <rect x="276" y="243" width="88" height="50" rx="10" fill="#f1f7f3" opacity=".9"/><text x="320" y="274" text-anchor="middle">GOURDE</text>
+ <g class="closure-screw"><rect x="267" y="104" width="106" height="38" rx="9" fill="url(#closure-cap)" stroke="#172f36" stroke-width="3"/><rect x="272" y="107" width="96" height="28" rx="5" fill="url(#closure-ribs)"/><ellipse cx="320" cy="108" rx="49" ry="6" fill="#587a7c"/><path class="closure-cap-mark" d="M288 114V137" stroke="#f1c75b" stroke-width="4" stroke-linecap="round"/></g>
+ <g class="closure-clip"><rect x="271" y="136" width="98" height="22" rx="7" fill="#24557b" stroke="#183b59" stroke-width="3"/><circle cx="363" cy="136" r="7" fill="#8dabbc"/><g class="closure-lid"><path d="M273 136V123Q273 115 287 115H350Q365 115 365 125V136Z" fill="#568dba" stroke="#183b59" stroke-width="3"/><path d="M275 132L266 145" stroke="#183b59" stroke-width="5"/><path d="M287 120H341" stroke="#d2e5f7" stroke-width="3"/></g></g>
+ </g>
+ <g class="closure-drops" fill="#3999d3"><path class="closure-drop d1" d="M306 313Q292 330 306 339Q320 330 306 313"/><path class="closure-drop d2" d="M318 319Q304 336 318 345Q332 336 318 319"/><path class="closure-drop d3" d="M294 328Q280 345 294 354Q308 345 294 328"/></g>
+ <path d="M182 379L196 422H445L459 379Z" fill="#dbe6e7" stroke="#5f7d85" stroke-width="3"/>
+ <path class="closure-puddle" d="M203 410Q319 398 439 410V417H203Z" fill="#60b8dd"/>
+ <text x="320" y="446" text-anchor="middle">Bac de récupération</text>
+ <text class="closure-mechanism" x="320" y="42" text-anchor="middle"></text>
+ <text class="closure-movement" x="320" y="68" text-anchor="middle"></text>`;
+ const bottle=drawing.querySelector('.closure-bottle'),screw=drawing.querySelector('.closure-screw'),clip=drawing.querySelector('.closure-clip'),lid=drawing.querySelector('.closure-lid');
+ const buttons=E('div',undefined,'closure-actions');p.append(buttons);let progress=0,inverted=false,busy=false,observed=false,timer=null;
+ const move=button(buttons,'Tourner le bouchon',()=>{
+  if(busy||inverted||complete())return;busy=true;progress++;observed=false;drawing.classList.toggle('closure-turning',choice.value==='screw');sync();
+  timer=setTimeout(()=>{busy=false;drawing.classList.remove('closure-turning');sync()},600);
+ });
+ const test=button(buttons,'Retourner la gourde pour tester',()=>{if(busy||inverted)return;inverted=true;observed=true;sync()});
+ const upright=button(buttons,'Remettre la gourde debout',()=>{inverted=false;observed=false;sync()});upright.classList.add('secondary');
+ const reset=button(buttons,'Recommencer avec ce bouchon',()=>resetState());reset.classList.add('secondary');
+ const state=output(p);state.classList.add('closure-state');const observation=output(p);observation.classList.add('closure-observation');
+ const complete=()=>progress>=(choice.value==='screw'?3:2);
+ function resetState(){clearTimeout(timer);timer=null;progress=0;busy=false;inverted=false;observed=false;drawing.classList.remove('closure-turning');sync()}
+ function sync(){
+  const isScrew=choice.value==='screw',sealed=complete();bottle.style.transform=inverted?'rotate(180deg)':'rotate(0deg)';
+  screw.style.display=isScrew?'':'none';clip.style.display=isScrew?'none':'';
+  screw.style.transform=`translateY(${progress*8}px)`;drawing.querySelector('.closure-cap-mark').style.transform=`translateX(${(progress%3)*30}px)`;lid.style.transform=`rotate(${progress===0?75:progress===1?30:0}deg)`;
+  drawing.querySelector('.closure-mechanism').textContent=isScrew?'Bouchon vissé':'Bouchon clipsé';
+  drawing.querySelector('.closure-movement').textContent=isScrew?'Mouvement : tourner':'Mouvement : appuyer';
+  const leak=inverted&&!sealed;drawing.classList.toggle('closure-leaking',leak);drawing.querySelector('.closure-drops').style.display=leak?'':'none';drawing.querySelector('.closure-puddle').style.display=leak?'':'none';
+  move.textContent=isScrew?'Tourner le bouchon':'Appuyer sur le bouchon';move.disabled=busy||inverted||sealed;test.disabled=busy||inverted;upright.disabled=!inverted||busy;choice.disabled=busy;
+  state.textContent='Position : '+(inverted?'retournée':'debout')+' · Fermeture : '+(progress===0?'ouverte':sealed?'complète':'incomplète')+'.';
+  if(observed)observation.textContent=leak?'Observation du test : de l’eau s’écoule dans le bac.':'Observation du test : aucun écoulement visible dans le bac.';
+  else observation.textContent=inverted?'Remets la gourde debout avant de poursuivre.':busy?'Observe le mouvement du bouchon.':sealed?'La fermeture est complète. Retourne la gourde pour tester.':'Réalise un mouvement, puis retourne la gourde pour observer.';
+  if(inverted&&!sealed)observation.textContent+=' Remets-la debout pour terminer la fermeture.';
+ }
+ choice.addEventListener('change',resetState);sync();
+ table(p,['Bouchon','Mouvement réalisé','Observation avant fermeture complète','Observation après fermeture complète'],[['Vissé','À relever sur papier','À relever sur papier','À relever sur papier'],['Clipsé','À relever sur papier','À relever sur papier','À relever sur papier']]);
+ p.append(E('p','Sur ta feuille : complète ton tableau, puis explique ce qu’il faut vérifier avant de ranger une gourde dans un sac.','hint'));
+ p.append(E('p','Deux fermetures fictives, indépendantes des modèles A, B et C. Dans ce modèle, seule une fermeture complète empêche l’écoulement. Le nombre de clics représente le mouvement : il ne mesure ni l’effort ni la durée réelle. Une vraie gourde doit aussi être testée.','hint'));
+}
+
 const widgets={
+bottleClosure(p,c){bottleClosure(p)},
 lampFootprint,
 phoneFit,
 irrigation:irrigationBench,irrigationPlanning,
