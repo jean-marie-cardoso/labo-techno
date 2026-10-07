@@ -282,7 +282,76 @@ function bottleClosure(p){
  p.append(E('p','Deux fermetures fictives, indépendantes des modèles A, B et C. Dans ce modèle, seule une fermeture complète empêche l’écoulement. Le nombre de clics représente le mouvement : il ne mesure ni l’effort ni la durée réelle. Une vraie gourde doit aussi être testée.','hint'));
 }
 
+function crankLamp(p){
+ p.classList.add('crank-lamp');
+ p.append(E('p','Q1–Q2 · Manipule la lampe, puis garde tes observations et tes schémas sur papier.'));
+ const steps=E('ol',undefined,'crank-steps');for(const t of ['Essaie d’allumer avec la batterie vide.','Éteins, puis tourne la manivelle. Observe ce qui bouge.','Allume après l’arrêt de la manivelle. Observe si la lumière reste allumée.'])steps.append(E('li',t));p.append(steps);
+ const controls=E('div',undefined,'crank-controls');p.append(controls);
+ const sw=toggle(controls,'Allumer la lampe (fermer l’interrupteur)',false),inside=toggle(controls,'Voir les pièces à l’intérieur',true);
+ const wrap=E('div',undefined,'crank-drawing');p.append(wrap);const graph=svg(wrap,'Lampe à manivelle : poignée tournante, génératrice, accumulateur, interrupteur et DEL');graph.setAttribute('viewBox','0 0 900 440');
+ graph.innerHTML=`<defs>
+ <linearGradient id="crank-metal" x2="0" y2="1"><stop stop-color="#f4f6f7"/><stop offset=".5" stop-color="#adb9bf"/><stop offset="1" stop-color="#60767e"/></linearGradient>
+ <linearGradient id="crank-lens" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#a4c8d6"/></linearGradient>
+ <radialGradient id="crank-beam"><stop stop-color="#ffeeb4" stop-opacity=".85"/><stop offset="1" stop-color="#ffeeb4" stop-opacity=".08"/></radialGradient>
+ </defs>
+ <rect x="5" y="5" width="890" height="430" rx="22" fill="#f4f7f5"/>
+ <path class="crank-beam" d="M665 158L880 72V300L665 226Z" fill="url(#crank-beam)"/>
+ <rect x="109" y="146" width="532" height="131" rx="46" fill="url(#crank-metal)" stroke="#314e56" stroke-width="4"/>
+ <path d="M120 172V250M133 163V259" stroke="#586e76" stroke-width="5"/>
+ <rect x="591" y="139" width="78" height="145" rx="22" fill="#334f58" stroke="#1f3941" stroke-width="4"/>
+ <ellipse cx="662" cy="211" rx="28" ry="63" fill="url(#crank-lens)" stroke="#1f3941" stroke-width="4"/>
+ <g class="crank-leds" fill="#d7e8ed" stroke="#607e8a" stroke-width="2"><ellipse cx="662" cy="180" rx="12" ry="15"/><ellipse cx="662" cy="211" rx="12" ry="15"/><ellipse cx="662" cy="242" rx="12" ry="15"/></g>
+ <rect x="448" y="122" width="69" height="24" rx="8" fill="#1f3941"/><rect class="crank-switch" x="452" y="124" width="30" height="20" rx="6" fill="#e4ebed"/>
+ <g class="crank-inside"><rect x="175" y="163" width="387" height="96" rx="16" fill="#eef5f2" stroke="#8fa7a9" stroke-width="2"/>
+ <rect x="211" y="188" width="100" height="43" rx="10" fill="#d8b565" stroke="#765922" stroke-width="2"/>
+ <g class="crank-generator"><circle cx="259" cy="209" r="17" fill="#8e9fa6" stroke="#43575f" stroke-width="3"/><path d="M246 209H272M259 196V222" stroke="#eef2f3" stroke-width="4"/></g>
+ <rect x="375" y="184" width="123" height="50" rx="8" fill="#53747b" stroke="#2d4c53" stroke-width="3"/><rect x="498" y="196" width="8" height="24" fill="#2d4c53"/>
+ <rect class="crank-stock" x="384" y="193" width="103" height="32" rx="4" fill="#bcc9c8"/>
+ <path class="crank-charge-wire" d="M311 210H375" fill="none" stroke="#869596" stroke-width="5"/>
+ <path class="crank-light-wire" d="M506 210H540V154H483V146 M540 210H589" fill="none" stroke="#869596" stroke-width="5"/>
+ </g>
+ <g class="crank-handle"><circle cx="259" cy="209" r="24" fill="#3a545c" stroke="#203940" stroke-width="4"/><path d="M259 209L178 306" stroke="#263f47" stroke-width="18" stroke-linecap="round"/><ellipse cx="178" cy="306" rx="27" ry="15" fill="#4b6a73" stroke="#203940" stroke-width="4"/><circle cx="259" cy="209" r="7" fill="#a5b6bc"/></g>
+ <g stroke="#607b80" stroke-width="2" fill="none"><path d="M180 307L135 355H70"/><path d="M260 169V83H200"/><path d="M434 182V87H450"/><path d="M483 122V59H567"/><path d="M672 257L735 351H785"/></g>
+ <g fill="#24474b" style="font-size:20px"><text x="29" y="384">Manivelle</text><text x="145" y="70">Génératrice</text><text x="376" y="73">Accumulateur</text><text x="572" y="65">Interrupteur</text><text x="717" y="382">DEL (lampes)</text></g>
+ <text class="crank-motion" x="330" y="326" style="font-size:19px" fill="#24474b"></text>
+ </svg>`;
+ let charged=false,turning=false,timer;
+ const actions=E('div',undefined,'crank-actions');p.append(actions);
+ const turn=button(actions,'Tourner la manivelle',()=>{if(turning)return;turning=true;draw();timer=setTimeout(()=>{charged=true;turning=false;draw()},2600)});
+ button(actions,'Repartir avec la batterie vide',()=>{clearTimeout(timer);charged=false;turning=false;sw.checked=false;draw()}).classList.add('secondary');
+ const status=output(p);status.classList.add('crank-status');
+ function draw(){const lit=charged&&sw.checked;graph.classList.toggle('is-turning',turning);graph.classList.toggle('is-lit',lit);graph.classList.toggle('is-charged',charged);graph.classList.toggle('show-inside',inside.checked);graph.querySelector('.crank-switch').setAttribute('x',sw.checked?'483':'452');turn.disabled=turning;turn.textContent=turning?'La manivelle tourne…':'Tourner la manivelle';graph.querySelector('.crank-motion').textContent=turning?'La manivelle et la génératrice tournent.':'La manivelle est arrêtée.';
+ status.textContent='Batterie : '+(charged?'énergie disponible':'vide')+' · Interrupteur : '+(sw.checked?'fermé':'ouvert')+' · DEL : '+(lit?'allumées':'éteintes')+'.';if(turning)status.textContent+=' Recharge en cours.';
+ }
+ sw.addEventListener('change',draw);inside.addEventListener('change',draw);draw();
+ p.append(E('p','Sur papier : compare tes essais. Quand les DEL éclairent-elles ? Que se passe-t-il quand tu arrêtes de tourner ? Utilise les cinq noms de pièces pour ton schéma.','hint'));
+ p.append(E('p','Modèle simplifié : la recharge est symbolique. « Énergie disponible » ne donne ni une quantité mesurée ni une durée d’éclairage. Cette animation ne vérifie pas les 10 minutes demandées dans Q4.','hint'));
+}
+
+function crankChain(p,c){
+ p.classList.add('crank-chain');
+ p.append(E('p','Retrouve les cinq pièces de la lampe. Déplace les cartes pour préparer ta proposition de chaîne ; puis dessine-la sur papier et ajoute les formes d’énergie demandées dans Q2.'));
+ widgets.order(p,c);
+ const icons={
+ 'DEL':'<path d="M23 15Q38 15 38 31V39H8V31Q8 15 23 15Z" fill="#ffdf77"/><path d="M17 39V53M29 39V53M42 14L51 5M45 23L57 18" stroke="#586d73" stroke-width="3"/>',
+ 'Main et manivelle':'<circle cx="34" cy="22" r="10" fill="#526d75"/><path d="M34 22L15 44" stroke="#304d54" stroke-width="8"/><rect x="5" y="39" width="20" height="11" rx="5" fill="#526d75"/>',
+ 'Accumulateur':'<rect x="6" y="18" width="45" height="28" rx="6" fill="#70a68a" stroke="#304d54" stroke-width="3"/><path d="M51 26H56V38H51M15 32H24M36 26V38M30 32H42" stroke="#304d54" stroke-width="3"/>',
+ 'Interrupteur':'<rect x="5" y="20" width="49" height="27" rx="8" fill="#304d54"/><rect x="9" y="24" width="24" height="19" rx="5" fill="#d7e7e9"/>',
+ 'Génératrice':'<rect x="10" y="17" width="42" height="31" rx="7" fill="#dfbd72" stroke="#816736" stroke-width="2"/><circle cx="29" cy="32" r="11" fill="#789099"/><path d="M29 21V43M18 32H40" stroke="#f2f7f8" stroke-width="3"/>'};
+ const decorate=()=>{for(const label of p.querySelectorAll('.order li>span')){if(label.querySelector('svg'))continue;const name=label.textContent,icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 64 64');icon.setAttribute('aria-hidden','true');icon.innerHTML=icons[name]||'';label.prepend(icon)}};
+ decorate();p.addEventListener('click',decorate);
+}
+function crankPaper(p){
+ p.append(E('h3','Q3 · Classer sur papier'));
+ p.append(E('p','Prépare trois colonnes : « Ressource », « Stockage », « Forme d’énergie ». Place dans ton tableau les cinq propositions de la fiche : soleil, vent, batterie chargée, lumière, électricité.'));
+ p.append(E('h3','Q4 · Choisir pour le refuge'));
+ p.append(E('p','Il fait nuit, tu es à l’intérieur, sans réseau électrique. Compare sur papier : panneau solaire seul, accumulateur déjà chargé, prise secteur. Justifie avec ces conditions.'));
+ p.append(E('p','Pour les 10 minutes d’éclairage : la simulation ne mesure pas l’autonomie. Note ce qu’il faudrait vérifier sur un vrai appareil.','hint'));
+}
+
 const widgets={
+crankChain,crankPaper,
+crankLamp,
 bottleClosure(p,c){bottleClosure(p)},
 lampFootprint,
 phoneFit,
