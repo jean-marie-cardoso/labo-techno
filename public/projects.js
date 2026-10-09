@@ -26,7 +26,7 @@ houseNetwork(p,c){
  else{route.push([180,340]);state=school?'Fichier reçu par le serveur.':'Demande reçue par l’imprimante ; une page est imprimée.'}}
  if(route.length>1){busy=true;send.disabled=true;out.textContent='Message en cours…';draw()}else{draw();out.textContent=state}
  });
- on([box,a,linkA,b,dest,link,...(internet?[internet]:[]),op,ipB,ipD],()=>{if(busy)return;route=[];draw();out.textContent='Réglage prêt : envoie une nouvelle demande.'});p.append(E('p','Modèle local simplifié : les points orange montrent un message. Aucune donnée ne quitte cette page. Les adresses et la maison sont fictives.','hint'));draw();out.textContent=state;
+ on([box,a,linkA,b,dest,link,...(internet?[internet]:[]),op,ipB,ipD],()=>{if(busy)return;route=[];draw();out.textContent='Réglage prêt : envoie une nouvelle demande.'});p.append(E('p','Modèle local simplifié : les points orange montrent un message. Aucune donnée ne quitte cette page. ','hint'));draw();out.textContent=state;
 },
 gameBench(p){
  const mode=select(p,'Règle du contact à essayer',[['once','Un point par contact'],['repeat','Un point à chaque lecture du contact']]),goal=select(p,'Fin de partie',[[3,'3 points'],[5,'5 points']],3),reset=toggle(p,'Remettre le score à zéro au drapeau',true);

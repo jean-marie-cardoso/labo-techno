@@ -30,7 +30,7 @@ lampMeasure(p,c){
   cursor.disabled=!ready;place.disabled=ready;b.screen.textContent=ready?'Repère : '+fmt(+cursor.value)+' cm':'Règle à placer';b.status.textContent=ready?'Aligne le trait rouge avec le pointillé du bord droit. Relève la mesure avec son unité.':'Clique sur « Placer le zéro au bord gauche » pour commencer.';
  };obj.addEventListener('input',()=>{ready=false;cursor.value=0;cursor.dispatchEvent(new Event('input'))});cursor.addEventListener('input',draw);draw();
  help(p,'Le zéro doit être aligné avec le premier bord. Lis la graduation sous le second bord. Chaque petite graduation vaut 1 mm, soit 0,1 cm. Les flèches du clavier déplacent le repère de 1 mm.');
- note(p,'Dimensions fictives de la fiche. La vue de dessus évite la déformation par la perspective. Ne mesure pas ton écran avec une vraie règle.');
+ note(p,' La vue de dessus évite la déformation par la perspective. Ne mesure pas ton écran avec une vraie règle.');
 },
 
 phoneMeasure(p,c){
@@ -62,7 +62,7 @@ phoneMeasure(p,c){
  };
  obj.addEventListener('input',()=>{ready=false;cursor.value=0;cursor.dispatchEvent(new Event('input'))});cursor.addEventListener('input',draw);draw();
  help(p,'Le zéro doit être aligné avec le premier bord. Lis la graduation sous le second bord. Entre deux centimètres, chaque petite graduation vaut 1 mm, soit 0,1 cm. Les flèches du clavier déplacent le repère de 1 mm.');
- note(p,'Objets fictifs aux dimensions de la fiche. Une vue de dessus permet de mesurer sans perspective. Ne mesure pas ton écran avec une vraie règle.');
+ note(p,' Une vue de dessus permet de mesurer sans perspective. Ne mesure pas ton écran avec une vraie règle.');
 },
 
 elevatorTape(p,c){
@@ -135,7 +135,7 @@ elevatorTape(p,c){
  };
  obj.addEventListener('input',()=>{anchored=false;length.value=0;length.dispatchEvent(new Event('input'))});length.addEventListener('input',draw);
  draw();help(p,'Le crochet métallique marque le zéro. Le ruban doit être tendu et aligné sur la dimension. Pour la hauteur du bouton, pars du sol et vise le centre du bouton, pas le bas de sa plaque. Tu peux déplacer le curseur au clavier avec les flèches (1 cm par appui).');
- note(p,'Cabines fictives du dossier. Vues simplifiées sans perspective sur la mesure ; le dessin est réduit à l’écran. Ne mesure pas ton écran avec un vrai mètre. Aucune conformité n’est décidée à ta place.');
+ note(p,' Vues simplifiées sans perspective sur la mesure ; le dessin est réduit à l’écran. Ne mesure pas ton écran avec un vrai mètre. Aucune conformité n’est décidée à ta place.');
 },
 
 length(p,c){
@@ -174,13 +174,13 @@ multimeter(p,c){
  else if(mode.value==='ohm'&&(object.value==='battery'||supply.checked)){value='BLOQUÉ';msg=object.value==='battery'?'Tu testes une batterie : choisis V continu pour mesurer sa tension. Le mode continuité ne convient pas à une batterie.':'Le câble est encore alimenté. Décoche « Circuit alimenté », puis refais la lecture de continuité.'}
  else if(mode.value==='ohm'){value=(bp.value===rp.value||!fault.checked)?'0,2 Ω':'OL';msg=value==='OL'?'Circuit ouvert entre les pointes.':'Faible résistance entre les pointes.'}
  else{const v=object.value==='battery'?(source.value==='normal'?(c.voltage||6):(c.voltage||6)*.7):0;const signed=bp.value===rp.value?0:rp.value==='plus'?v:-v;value=Math.abs(signed)>=+cal.value?'OL':signed.toFixed(2).replace('.',',')+' V';if(value==='OL')msg='Dépassement du calibre sélectionné.'}
- b.screen.textContent=value;b.status.textContent=msg});help(p,'Pour une tension continue : cordon noir sur COM, rouge sur VΩ, sélecteur V⎓, puis les pointes sur les deux points à comparer. Le signe dépend du sens des pointes. Pour la continuité : câble isolé, hors tension. Aucune mesure de courant ni prise secteur sur ce banc.');note(p,'Banc fictif à très basse tension. Il entraîne au choix des réglages ; il ne valide pas le geste réel. La notice et les consignes du professeur restent nécessaires pour un vrai appareil.');
+ b.screen.textContent=value;b.status.textContent=msg});help(p,'Pour une tension continue : cordon noir sur COM, rouge sur VΩ, sélecteur V⎓, puis les pointes sur les deux points à comparer. Le signe dépend du sens des pointes. Pour la continuité : câble isolé, hors tension. Aucune mesure de courant ni prise secteur sur ce banc.');note(p,'Ce banc entraîne au choix des réglages ; il ne valide pas le geste réel. La notice et les consignes du professeur restent nécessaires pour un vrai appareil.');
 },
 balance(p,c){
  const b=setup(p,'Balance électronique, plateau et objet à peser'),object=choices(b.controls,'Objet à peser',c.items),trial=select(b.controls,'Essai',[['0','1'],['1','2'],['2','3']]),power=toggle(b.controls,'Allumer la balance'),bowl=toggle(b.controls,'Poser le récipient vide'),placed=toggle(b.controls,'Poser l’objet / la portion');let tare=0;
  const gross=()=> (bowl.checked?(c.bowl||80):0)+(placed.checked?c.items[+object.value][1][+trial.value]:0);
  const draw=()=>{b.drawing.innerHTML='<path d="M130 205H500L535 295H100Z" fill="#c3ccca" stroke="#4d6765" stroke-width="4"/><ellipse cx="315" cy="205" rx="180" ry="24" fill="#e8eeee" stroke="#4d6765" stroke-width="3"/>'+(bowl.checked?'<path d="M205 115Q220 210 315 205Q410 210 425 115Z" fill="#b3c9d280" stroke="#567980" stroke-width="3"/>':'')+(placed.checked?'<rect x="265" y="125" width="100" height="65" rx="15" fill="#bc925c" stroke="#7c5834"/>'+text(225,95,c.items[+object.value][0],17):'')+'<rect x="220" y="245" width="195" height="36" rx="4" fill="#b6c7a3"/>'+text(250,271,'BALANCE',18);b.screen.textContent=power.checked?fmt(gross()-tare)+' g':'ÉTEINTE';b.status.textContent='Lecture nette après la dernière tare. Relève la valeur avec son unité.'};
- button(b.controls,'Tare / zéro',()=>{if(power.checked){tare=gross();draw()}});on([object,trial,power,bowl,placed],draw);help(p,'Allume la balance. Vérifie le zéro à vide. Pour une portion : pose le récipient vide, fais la tare, puis ajoute la portion. Garde les mêmes conditions pour les trois essais.');note(p,'Masses fictives. Le récipient pèse '+(c.bowl||80)+' g dans ce modèle ; la tare soustrait la charge présente au moment du clic. Aucun choix de modèle ni verdict automatique.');
+ button(b.controls,'Tare / zéro',()=>{if(power.checked){tare=gross();draw()}});on([object,trial,power,bowl,placed],draw);help(p,'Allume la balance. Vérifie le zéro à vide. Pour une portion : pose le récipient vide, fais la tare, puis ajoute la portion. Garde les mêmes conditions pour les trois essais.');note(p,' Le récipient pèse '+(c.bowl||80)+' g dans ce modèle ; la tare soustrait la charge présente au moment du clic. Aucun choix de modèle ni verdict automatique.');
 },
 };
 window.instrumentTools=toolsUI;
