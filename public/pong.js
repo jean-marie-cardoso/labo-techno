@@ -32,3 +32,32 @@ window.mountPong=function(p,debug=false){
  function frame(t){if(!p.isConnected)return;let dt=Math.min((t-last)/1000||0,.05);last=t;if(!paused)g.step(dt,keys);paint();requestAnimationFrame(frame)}requestAnimationFrame(frame);return g;
 };
 if(window.projectWidgets)window.projectWidgets.gameBench=function(p){window.mountPong(p,true);const a=document.createElement('a');a.href='../4-01/#aides';a.textContent='Ouvrir les aides du projet Pong';p.append(a)};
+
+// Automatic, narrated excerpts. The pupils implement the real controls in Scratch.
+window.mountPongDemo=function(p){
+ const g=window.PongEngine();let phase=0,elapsed=0,scoredAt=null,paused=false,last=0,finished=false;
+ const make=(tag,text)=>{const e=document.createElement(tag);e.textContent=text||'';return e};
+ const title=make('p');title.className='demo-step';p.append(title);
+ const canvas=make('canvas');canvas.width=720;canvas.height=540;canvas.className='pong-demo-canvas';canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Démonstration automatique du Pong : raquettes, rebonds, score et victoire');p.append(canvas);const c=canvas.getContext('2d');
+ const status=make('p');status.setAttribute('role','status');p.append(status);
+ const controls=make('div');controls.className='pong-controls';p.append(controls);
+ const pause=make('button','Pause'),replay=make('button','Revoir la démonstration');pause.type=replay.type='button';controls.append(pause,replay);
+ function start(){g.start();phase=0;elapsed=0;scoredAt=null;finished=false;paused=false;paint()}
+ function setPhase(n){phase=n;elapsed=0;scoredAt=null;g.start();if(n===1){g.y=[140,0];g.x=0;g.bY=-85;g.vx=-180;g.vy=0;g.delay=1}else if(n===2){g.score=[4,4];g.y=[0,140];g.bY=-85;g.vx=180;g.vy=0;g.delay=2}}
+ function step(dt){if(paused||finished)return;elapsed+=dt;
+  if(phase===0){for(let i=0;i<2;i++){const target=g.bY;g.y[i]+=Math.max(-190*dt,Math.min(190*dt,target-g.y[i]));g.y[i]=Math.max(-140,Math.min(140,g.y[i]))}g.step(dt);if(elapsed>=10)setPhase(1)}
+  else {if(scoredAt===null){g.step(dt);if((phase===1&&g.score[1]===1)||(phase===2&&g.ended))scoredAt=elapsed}else if(phase===1&&elapsed-scoredAt>3)setPhase(2);else if(phase===2&&elapsed-scoredAt>3)finished=true}
+ }
+ function paint(){c.fillStyle='#132b3c';c.fillRect(0,0,720,540);c.strokeStyle='#708998';c.setLineDash([10,10]);c.beginPath();c.moveTo(360,0);c.lineTo(360,540);c.stroke();c.setLineDash([]);c.fillStyle='#fff';c.fillRect(0,0,720,3);c.fillRect(0,537,720,3);c.font='bold 32px system-ui';c.textAlign='center';c.fillText('J1 : '+g.score[0],205,42);c.fillText('J2 : '+g.score[1],515,42);
+  for(let i=0;i<2;i++){c.fillStyle=i?'#ffbc70':'#70d4ef';c.fillRect(360+(i?210:-210)*1.5-9,270-g.y[i]*1.5-60,18,120)}
+  c.fillStyle='#fff';c.beginPath();c.arc(360+g.x*1.5,270-g.bY*1.5,9,0,Math.PI*2);c.fill();
+  let banner=paused?'Pause':g.ended?'J1 gagne : 5 points !':g.delay>0?'Retour au centre':'';
+  if(banner){c.fillStyle='#132b3cf0';c.fillRect(130,225,460,80);c.fillStyle='#fff';c.font='bold 25px system-ui';c.fillText(banner,360,273)}
+  title.textContent=['1 / 3 · Les échanges','2 / 3 · Un seul point par sortie','3 / 3 · La fin de partie'][phase];
+  const txt=phase===0?'Les raquettes bougent automatiquement. La balle rebondit en haut, en bas et sur les raquettes.':phase===1?(scoredAt===null?'La raquette gauche manque la balle. Observez qui marque.':'Sortie à gauche : J2 gagne 1 point. La balle revient au centre.'):(scoredAt===null?'Extrait de fin de manche : on reprend à 4–4. La balle va sortir à droite.':'Sortie à droite : J1 atteint 5. Le jeu s’arrête et annonce le gagnant.');
+  if(status.textContent!==txt)status.textContent=txt;pause.textContent=paused?'Reprendre':'Pause';pause.disabled=finished;canvas.dataset.demo=JSON.stringify({phase,elapsed,paused,finished,x:g.x,y:g.bY,paddles:g.y,score:g.score});
+ }
+ pause.onclick=()=>{paused=!paused;paint()};replay.onclick=start;
+ start();if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)paused=true;
+ function frame(t){if(!p.isConnected)return;const dt=Math.min((t-last)/1000||0,.05);last=t;step(dt);paint();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+};
