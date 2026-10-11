@@ -31,7 +31,27 @@ window.mountPong=function(p,debug=false){
  function paint(){c.fillStyle='#132b3c';c.fillRect(0,0,960,720);c.strokeStyle='#7692a1';c.setLineDash([15,15]);c.beginPath();c.moveTo(480,0);c.lineTo(480,720);c.stroke();c.setLineDash([]);c.fillStyle='#fff';c.fillRect(0,0,960,3);c.fillRect(0,717,960,3);c.font='bold 48px Arial';c.textAlign='center';c.fillText(g.score[0],320,70);c.fillText(g.score[1],640,70);['#70d4ef','#ffbc70'].forEach((color,i)=>{c.fillStyle=color;c.fillRect((i?210:-210)*2+480-12,360-g.y[i]*2-80,24,160)});c.fillStyle='#fff';c.beginPath();c.arc(g.x*2+480,360-g.bY*2,12,0,7);c.fill();let message=paused?'Pause':g.ended?'Joueur '+(g.score[0]>=5?1:2)+' gagne !':!g.running?'Pong à deux':g.delay>0?'Service…':'';if(message){c.fillStyle='#132b3ce8';c.fillRect(165,290,630,105);c.fillStyle='#fff';c.font='bold 38px Arial';c.fillText(message,480,355)}let text=`J1 : ${g.score[0]} · J2 : ${g.score[1]}. ${message||'Partie en cours.'}`;if(out.textContent!==text)out.textContent=text;cv.dataset.state=JSON.stringify(g);pause.textContent=paused?'Reprendre':'Pause'}
  function frame(t){if(!p.isConnected)return;let dt=Math.min((t-last)/1000||0,.05);last=t;if(!paused)g.step(dt,keys);paint();requestAnimationFrame(frame)}requestAnimationFrame(frame);return g;
 };
-if(window.projectWidgets)window.projectWidgets.gameBench=function(p){window.mountPong(p,true);const a=document.createElement('a');a.href='../4-01/#aides';a.textContent='Ouvrir les aides du projet Pong';p.append(a)};
+// A deterministic bench: one click is one pass through the scoring condition.
+window.mountPongDebug=function(p){
+ const make=(tag,text)=>{const el=document.createElement(tag);el.textContent=text||'';return el};
+ const button=(text,fn)=>{const b=make('button',text);b.type='button';b.onclick=fn;p.append(b);return b};
+ p.append(make('p','Une seule sortie de balle, plusieurs lectures de la condition. Un clic sur « Lire la sortie » représente un passage dans la boucle du programme.'));
+ const label=make('label','Comptage de la sortie '),mode=make('select');label.className='control';mode.setAttribute('aria-label','Comptage de la sortie');
+ for(const [v,t] of [['repeat','La balle reste dehors'],['once','La balle revient au centre après le point']]){const op=make('option',t);op.value=v;mode.append(op)}label.append(mode);p.append(label);
+ const graph=document.createElementNS('http://www.w3.org/2000/svg','svg');graph.setAttribute('viewBox','0 0 720 290');graph.setAttribute('role','img');graph.setAttribute('aria-label','Banc du score : sortie à droite ou balle recentrée');graph.classList.add('score-bench');p.append(graph);
+ const out=make('p');out.className='observation';out.setAttribute('role','status');p.append(out);
+ let points=0,inside=false,reads=0;
+ function paint(message=''){graph.innerHTML=`<rect x="15" y="15" width="640" height="240" rx="12" fill="#132b3c"/><path d="M335 15v240" stroke="#7692a1" stroke-dasharray="8 8"/><text x="175" y="58" style="fill:#fff;font-size:25px" text-anchor="middle">J1 : ${points}</text><text x="500" y="58" style="fill:#fff;font-size:25px" text-anchor="middle">J2 : 0</text><path d="M50 115v55M620 65v55" stroke="#70d4ef" stroke-width="12"/><circle cx="${inside?335:681}" cy="190" r="10" fill="#efb864"/><text x="335" y="280" font-size="16" text-anchor="middle" fill="#23413c">${inside?'Balle au centre':'Balle sortie à droite'}</text>`;out.textContent=message||`Lectures : ${reads}. Score J1 : ${points}. Balle ${inside?'recentrée':'encore dehors'}.`;p.dataset.bench=JSON.stringify({points,inside,reads,mode:mode.value});}
+ function reset(){points=0;inside=false;reads=0;paint('Balle sortie à droite. Score J1 : 0. Clique trois fois sur « Lire la sortie ».')}
+ button('Replacer la balle dehors',reset);button('Lire la sortie',()=>{reads++;if(!inside){points++;if(mode.value==='once')inside=true}paint()});mode.onchange=reset;
+ p.append(make('h3','Tester le démarrage d’une nouvelle partie'));
+ p.append(make('p','Après avoir obtenu des points, décoche la remise à zéro puis lance une nouvelle partie. Recommence en cochant : compare les scores de départ.'));
+ const resetLabel=make('label'),check=make('input');resetLabel.className='toggle';check.type='checkbox';check.checked=true;resetLabel.append(check,document.createTextNode(' Remettre les scores à zéro à « Nouvelle partie »'));p.append(resetLabel);
+ button('Nouvelle partie',()=>{if(check.checked)points=0;reads=0;inside=true;paint(`Nouvelle partie. Score J1 : ${points} · J2 : 0. Balle au centre.`)});
+ const details=make('details');details.append(make('summary','Revoir le comportement attendu du Pong'));const demo=make('div');details.append(demo);p.append(details);let mounted=false;details.addEventListener('toggle',()=>{if(details.open&&!mounted){mounted=true;window.mountPongDemo(demo)}});
+ const a=make('a','Ouvrir les aides du projet Pong');a.href='../4-01/#aides';p.append(a);reset();
+};
+if(window.projectWidgets)window.projectWidgets.gameBench=function(p){window.mountPongDebug(p)};
 
 // Automatic, narrated excerpts. The pupils implement the real controls in Scratch.
 window.mountPongDemo=function(p){

@@ -6,9 +6,9 @@
  p.classList.add('house-workshop');
  const second=window.course.number===2;
  const devices=[
- {id:'tv',name:'Télévision',room:'Salon',type:'tv',x:90,y:390,ip:11,wire:true,port:4,role:'Reçoit des programmes par Internet ; reliée au switch par un câble RJ45.'},
+ {id:'tv',name:'Télévision',room:'Salon',type:'tv',x:90,y:410,ip:11,wire:true,port:4,role:'Reçoit des programmes par Internet ; reliée au switch par un câble RJ45.'},
  {id:'tablet',name:'Tablette',room:'Cuisine',type:'tablet',x:505,y:480,ip:13,role:'Consulte des sites et peut envoyer un document à l’imprimante par le Wi-Fi.'},
- {id:'a',name:'PC A',room:'Bureau',type:'pc',x:655,y:400,ip:10,wire:true,port:2,role:'Ordinateur fixe relié au switch. Il peut imprimer dans le réseau local.'},
+ {id:'a',name:'PC A',room:'Bureau',type:'pc',x:655,y:420,ip:10,wire:true,port:2,role:'Ordinateur fixe relié au switch. Il peut imprimer dans le réseau local.'},
  {id:'printer',name:'Imprimante',room:'Bureau',type:'printer',x:745,y:555,ip:20,wire:true,port:3,role:'Reçoit les documents du réseau local. Internet n’est pas nécessaire pour cet essai d’impression.'},
  {id:'b',name:'PC B',room:'Chambre 1',type:'laptop',x:220,y:155,ip:12,role:'Ordinateur portable connecté au point d’accès Wi-Fi de la box.'},
  {id:'console',name:'Console',room:'Chambre 2',type:'console',x:500,y:160,ip:14,wire:true,port:5,role:'Rejoint le réseau par un câble RJ45 jusqu’au switch du bureau.'},
@@ -16,7 +16,7 @@
  ];
  let view='iso',showLinks=true,selected='a',route=[],state='Choisis un appareil pour connaître son rôle.',result='';
  const title=(s)=>p.append(E('h3',s));
- title(second?'Q1 · Repère les appareils et les deux liaisons':'Q1 · Explore la maison complète');
+ title(second?'Q1 · Dessine le réseau de la maison':'Q1 · Construis les pièces dans Sweet Home 3D');
  p.append(E('p','Six pièces, un couloir, des portes, des fenêtres et du mobilier. Vue en coupe : le toit est retiré et les murs abaissés pour voir dedans. Le contour mesure 8 × 6 m. Clique sur un appareil, ou choisis-le dans la liste.'));
  const bar=E('div',undefined,'house-toolbar');p.append(bar);
  const iso=button(bar,'Vue en relief',()=>{view='iso';draw()}),top=button(bar,'Plan de dessus',()=>{view='top';draw()});
@@ -25,15 +25,15 @@
  const legend=E('p','Trait bleu : câble Ethernet avec prises RJ45. Pointillés orange : Wi-Fi. Trait violet : liaison de la box vers Internet.','house-legend');p.append(legend);
  const chooser=select(p,'Appareil à observer',devices.map(d=>[d.id,d.room+' · '+d.name]).concat([['box','Salon · Box'],['switch','Bureau · Switch 8 ports']]),'a');
  const detail=output(p);detail.classList.add('house-detail');
+ if(!second){p.append(E('p','Ouvre le guide 06 ci-dessous. Dans Sweet Home 3D, crée le contour de 800 × 600 cm, les six pièces et le couloir de 120 cm entre les axes des cloisons. Ajoute portes, fenêtres et mobilier, puis vérifie la circulation. Sur ton croquis, indique 8 m et 6 m.'));const g=E('a','06 · Aide Sweet Home 3D — plan et étapes (PDF)');g.href='../../documents/06_Aide_Sweet_Home_3D_5B01.pdf';g.className='house-guide';p.append(g);title('Q2 · Place les appareils et enregistre ton projet');p.append(E('p','Place les appareils du tableau dans ta maison. Dessine les câbles vers le switch et le Wi-Fi vers la box sur ton croquis. Enregistre Maison_reseau.sh3d, puis explique ce que ce fichier permet de modifier, contrairement à une image.'));}else{p.append(E('p','Sur ta feuille, dessine PC A et l’imprimante câblés au switch, le switch câblé à la box et PC B en Wi-Fi sur la box. Légende câble et Wi-Fi, puis explique le rôle du point d’accès Wi-Fi.'));}
  const table=E('table');table.innerHTML='<thead><tr><th>Pièce</th><th>Appareil</th><th>Liaison</th></tr></thead><tbody>'+devices.map(d=>`<tr><td>${d.room}</td><td>${d.name}</td><td>${d.wire?'RJ45 → switch, port '+d.port:'Wi-Fi → box'}</td></tr>`).join('')+'</tbody>';p.append(table);
- title(second?'Q1 · Box et switch : deux rôles différents':'Q2 · Équipe ta maison dans Sweet Home 3D');
- p.append(E('p',second?'Le switch relie les appareils câblés entre eux. Le point d’accès de la box relie les appareils Wi-Fi au réseau. La box relie aussi la maison à Internet.':'Crée ta propre maison dans Sweet Home 3D : les six pièces et le couloir, les portes, les fenêtres et les meubles. Place chaque appareil du tableau. La box est dans le salon et le switch dans le bureau. Le guide PDF donne le plan et les étapes.'));
- const guide=E('a','Ouvrir le guide de la maison (PDF)');guide.href='../../documents/06_Aide_Sweet_Home_3D_5B01.pdf';guide.className='house-guide';p.append(guide);
+ title('Comprendre la box et le switch');
+ p.append(E('p','Le switch relie les appareils câblés entre eux. Le point d’accès de la box relie les appareils Wi-Fi au réseau. La box relie aussi la maison à Internet.'));
  const ports=E('div',undefined,'house-ports');p.append(ports);
  ports.innerHTML='<strong>Switch du bureau · 8 ports RJ45</strong><div>'+['Box','PC A','Imprimante','Télévision','Console','Libre','Libre','Libre'].map((s,i)=>`<span><b>${i+1}</b>${s}</span>`).join('')+'</div>';
- p.append(E('p','Un câble par port. Le port 1 relie le switch à un port LAN de la box. Il reste trois ports libres. Le switch ne fournit pas de Wi-Fi. Les câbles traversent des gaines et des prises murales ; les traits montrent les connexions, pas un plan de câblage à réaliser.'));
+ p.append(E('p','Un câble par port. Le port 1 relie le switch à un port LAN de la box. Il reste trois ports libres. Le switch ne fournit pas de Wi-Fi.'));
  title(second?'Q2 · Essaie les adresses du réseau':'Q3 · Envoie un document à l’imprimante');
- p.append(E('p','Choisis un ordinateur ou la tablette, puis une demande. Tout fonctionne au départ. Fais un essai, change une seule chose, puis recommence. Reporte sur ta fiche : changement, résultat et trajet.'));
+ p.append(E('p',second?'Rétablis les réglages. Garde PC A et « Imprimer un document ». Envoie avec PC B à 192.168.1.12, puis passe son adresse à 192.168.1.20 et renvoie la même demande. Note les deux adresses et les deux résultats sur ta fiche.':'Garde PC A et « Imprimer un document ». Envoie avec tout branché. Décoche seulement « Câble Imprimante–switch branché », puis renvoie la demande. Note chaque résultat et le trajet ; rebranche ce câble.'));
  const lab=E('div',undefined,'house-lab');p.append(lab);
  const source=select(lab,'Appareil qui envoie',[['a','PC A · câble RJ45'],['b','PC B · Wi-Fi'],['tablet','Tablette · Wi-Fi']]);
  const request=select(lab,'Demande',[['print','Imprimer un document'],['web','Ouvrir un site Internet']]);
@@ -42,23 +42,26 @@
  const settings=E('details');settings.open=true;settings.append(E('summary','Changer une seule condition et refaire le test'));p.append(settings);
  const controls=E('div',undefined,'house-controls');settings.append(controls);
  const sw=toggle(controls,'Switch allumé',true),box=toggle(controls,'Box allumée',true),wifi=toggle(controls,'Wi-Fi activé sur la box',true),uplink=toggle(controls,'Câble switch–box branché',true),internet=toggle(controls,'Liaison Internet disponible',true);
- const endpoints={};for(const d of devices){const line=E('div',undefined,'house-device-control');line.append(E('strong',d.name+' · '+d.room));controls.append(line);endpoints[d.id]={power:toggle(line,d.name+' allumé'+(d.id==='printer'?'e':''),true),link:toggle(line,d.wire?'Câble '+d.name+'–switch branché':d.name+' connecté'+(d.id==='tablet'?'e':'')+' au Wi-Fi',true)};}
+ const more=E('details');more.append(E('summary','Autres appareils et réglages — pour explorer'));settings.append(more);
+ const endpoints={};for(const d of devices){const line=E('div',undefined,'house-device-control');line.append(E('strong',d.name+' · '+d.room));(d.id==='printer'?controls:more).append(line);endpoints[d.id]={power:toggle(line,d.name+' allumé'+(d.id==='printer'?'e':''),true),link:toggle(line,d.wire?'Câble '+d.name+'–switch branché':d.name+' connecté'+(d.id==='tablet'?'e':'')+' au Wi-Fi',true)};}
  const addr=E('div',undefined,'house-addresses');settings.append(addr);
  const ipB=select(addr,'Adresse locale du PC B',[[12,'192.168.1.12'],[20,'192.168.1.20 (essai de doublon)'],[30,'192.168.1.30']],12);
  addr.append(E('p','Imprimante : 192.168.1.20. PC A : 192.168.1.10. Box : 192.168.1.1. Les autres appareils ont chacun une adresse différente. Le switch simple n’a pas besoin d’une adresse à renseigner pour transmettre les trames.','hint'));
- button(p,'Rétablir tous les réglages',()=>{[sw,box,wifi,uplink,internet,...Object.values(endpoints).flatMap(v=>[v.power,v.link])].forEach(e=>e.checked=true);ipB.value='12';route=[];out.textContent='Tous les réglages sont rétablis. Envoie une nouvelle demande.';draw()});
+ button(p,'Rétablir tous les réglages',()=>{[sw,box,wifi,uplink,internet,...Object.values(endpoints).flatMap(v=>[v.power,v.link])].forEach(e=>e.checked=true);ipB.value='12';source.value='a';request.value='print';route=[];out.dataset.success='';out.textContent='Tous les réglages sont rétablis. Envoie une nouvelle demande.';draw()});
  title(second?'Q3 · Sépare réseau local et Internet':'Q4 · Compare les chemins');
- const tasks=E('ol');[
- 'PC A → imprimante : fais un essai avec tout branché, puis débranche seulement le câble de l’imprimante. Rebranche-le ensuite.',
- 'Coupe seulement Internet : compare impression et site. Prévois le résultat avant de cliquer.',
- 'Rétablis Internet, puis débranche seulement le câble switch–box. Compare l’impression depuis PC A et depuis PC B.',
- 'Rebranche le câble switch–box. Éteins seulement le switch : compare l’accès au site depuis PC A et depuis PC B.',
- ...(second?['Rétablis tout. Donne au PC B la même adresse que l’imprimante. Essaie une impression, choisis ensuite une adresse libre et vérifie la réparation.']:[])
- ].forEach(t=>tasks.append(E('li',t)));p.append(tasks);
- if(second){title('Q4 · Protège les accès et les personnes');p.append(E('p','Sur ta fiche : que faire si un message réclame le mot de passe ? Que vérifier avant de publier une image ? Que faire si une photo humiliante circule ?'));}
- const limits=E('p','Réseau scolaire simplifié : portée Wi-Fi supposée suffisante, adresses locales déjà réglées, aucun accès réel à Internet ni à une imprimante. Un essai réussi ici ne garantit pas la réception Wi-Fi de la vraie maison.','hint');p.append(limits);
+ const tasks=E('ol');(second?[
+ 'Donne à PC B une adresse libre parmi celles proposées. Depuis PC A, renvoie une impression et note si la correction suffit.',
+ 'Sans changer les adresses, coupe seulement « Liaison Internet disponible ». Depuis PC A, envoie une impression, puis une demande de site.',
+ 'Sur ta fiche : note chaque résultat et explique la différence avec le trajet des données.'
+ ]:[
+ 'Dessine le trajet PC A → switch → imprimante.',
+ 'Rétablis tous les réglages. Coupe seulement « Liaison Internet disponible ». Depuis PC A, compare impression et site ; note les résultats.',
+ 'Rétablis tous les réglages. Débranche seulement « Câble switch–box branché ». Compare l’impression depuis PC A et depuis PC B. Justifie avec les trajets.'
+ ]).forEach(t=>tasks.append(E('li',t)));p.append(tasks);
+ if(second){title('Q4 · Protège les accès et les personnes');p.append(E('p','Sur ta fiche, réponds aux trois situations : un message inconnu réclame ton mot de passe ; tu veux publier une image dont la licence est inconnue ; une photo humiliante circule. Indique une décision et une vérification pour les deux premières, puis deux actions pour la dernière.'));}
+ const explore=E('details');explore.append(E('summary','Pour le défi + : explorer une autre panne'));explore.append(E('p','Rétablis tout, puis éteins seulement le switch. Compare depuis PC A et PC B : impression et site. Les réglages des autres appareils sont disponibles dans « Autres appareils et réglages ».'));p.append(explore);
  function info(){const d=devices.find(v=>v.id===selected);detail.textContent=d?`${d.name} · ${d.room} · 192.168.1.${d.id==='b'?ipB.value:d.ip}. ${d.role}`:selected==='box'?'Box · salon. Port LAN vers le switch, point d’accès Wi-Fi pour les appareils sans fil, routeur vers Internet.':'Switch · bureau. Huit prises RJ45 : il transmet les données entre les appareils câblés. Un câble le relie à la box pour joindre les appareils Wi-Fi et Internet.';}
- const all=[source,request,sw,box,wifi,uplink,internet,ipB,...Object.values(endpoints).flatMap(v=>[v.power,v.link])];all.forEach(e=>e.addEventListener('change',()=>{route=[];out.textContent='Réglage modifié. Envoie une nouvelle demande.';draw()}));chooser.addEventListener('change',()=>{selected=chooser.value;draw()});
+ const all=[source,request,sw,box,wifi,uplink,internet,ipB,...Object.values(endpoints).flatMap(v=>[v.power,v.link])];all.forEach(e=>e.addEventListener('change',()=>{route=[];out.dataset.success='';out.textContent='Réglage modifié. Envoie une nouvelle demande.';draw()}));chooser.addEventListener('change',()=>{selected=chooser.value;draw()});
  function test(){
  const src=source.value,target=request.value==='print'?'printer':'web',d=devices.find(v=>v.id===src);route=[src];
  const adjacency={};const edge=(a,b)=>{(adjacency[a]??=[]).push(b);(adjacency[b]??=[]).push(a)};
@@ -85,13 +88,14 @@
  const text=(x,y,z,t,size=16)=>{const [a,b]=P(x,y,z);return `<text x="${a}" y="${b}" text-anchor="middle" font-size="${size}" fill="#203e3c" stroke="#fff" stroke-width="4" paint-order="stroke">${t}</text>`};
  let s='<rect width="1240" height="800" rx="20" fill="#e8f1ed"/>';
  s+=block(-10,-10,820,620,14,'#ccd5cc',-14);
- const rooms=[[0,0,300,260,'Chambre 1','#f3ddce'],[300,0,300,260,'Chambre 2','#dce8f4'],[600,0,200,260,'Salle de bains','#d6eeee'],[0,340,400,260,'Salon','#e8e1cf'],[400,340,200,260,'Cuisine','#ece3d6'],[600,340,200,260,'Bureau','#e1e7d3']];
+ const rooms=[[0,0,300,240,'Chambre 1','#f3ddce'],[300,0,300,240,'Chambre 2','#dce8f4'],[600,0,200,240,'Salle de bains','#d6eeee'],[0,360,400,240,'Salon','#e8e1cf'],[400,360,200,240,'Cuisine','#ece3d6'],[600,360,200,240,'Bureau','#e1e7d3']];
  for(const [x,y,w,h,n,col]of rooms)s+=poly([[x,y,0],[x+w,y,0],[x+w,y+h,0],[x,y+h,0]],col);
- s+=poly([[0,260,0],[800,260,0],[800,340,0],[0,340,0]],'#f9f8ed');
+ s+=poly([[0,240,0],[800,240,0],[800,360,0],[0,360,0]],'#f9f8ed');
  // Low cutaway walls, with door openings into the corridor.
- for(const [x,y,w,h]of [[0,0,800,8],[0,0,8,260],[0,340,8,260],[792,0,8,600],[0,592,800,8],[296,0,8,260],[596,0,8,260],[396,340,8,260],[596,340,8,260],[0,256,175,8],[255,256,215,8],[550,256,115,8],[745,256,55,8],[0,336,260,8],[340,336,95,8],[515,336,135,8],[730,336,70,8]])s+=block(x,y,w,h,48,colors.wall);
+ for(const [x,y,w,h]of [[0,0,800,8],[0,0,8,260],[0,340,8,260],[792,0,8,600],[0,592,800,8],[296,0,8,240],[596,0,8,240],[396,360,8,240],[596,360,8,240],[0,236,175,8],[255,236,215,8],[550,236,115,8],[745,236,55,8],[0,356,260,8],[340,356,95,8],[515,356,135,8],[730,356,70,8]])s+=block(x,y,w,h,48,colors.wall);
  // Doors open into rooms; windows are blue frames on outer walls.
- for(const [x,y]of [[0,260],[175,260],[470,260],[665,260],[260,340],[435,340],[650,340]]){s+=line([x,y,2],[x,y+(y===260?-75:75),2],'#966943',5);}
+ for(const [x,y]of [[175,240],[470,240],[665,240],[260,360],[435,360],[650,360]]){s+=line([x,y,2],[x,y+(y===240?-75:75),2],'#966943',5);}
+ s+=line([0,260,2],[75,260,2],'#966943',5);
  for(const x of [90,400,665])s+=block(x,0,90,9,28,'#9ddbe6',24);
  for(const x of [150,460,650])s+=block(x,591,80,9,28,'#9ddbe6',24);
  // Beds with headboard, pillows and blankets.
@@ -101,10 +105,10 @@
  // Bathroom tub, sink, WC. Speaker is on a dry shelf away from water.
  s+=block(620,25,145,60,40,'#fafdfd')+block(631,35,123,37,2,'#acd9e4',40)+block(630,190,48,45,48,'#fcfcf5')+block(745,205,30,35,35,'#fff')+block(695,105,65,45,60,colors.wood);
  // Living room sofa, low table, TV cabinet; kitchen counters and dining table.
- s+=block(35,490,160,65,35,'#a0b3a1')+block(35,545,160,15,68,'#7a9582')+block(35,490,15,65,50,'#7a9582')+block(180,490,15,65,50,'#7a9582')+block(90,410,70,50,25,colors.wood)+block(30,355,115,40,45,colors.wood);
- s+=block(420,355,160,40,55,'#b8c4c0')+block(430,360,40,28,2,'#7d9d9e',55)+block(540,360,30,30,3,'#36494e',55)+block(435,460,100,65,44,colors.wood)+block(555,510,35,55,95,'#d7e2e3');
+ s+=block(35,490,160,65,35,'#a0b3a1')+block(35,545,160,15,68,'#7a9582')+block(35,490,15,65,50,'#7a9582')+block(180,490,15,65,50,'#7a9582')+block(90,410,70,50,25,colors.wood)+block(30,375,115,40,45,colors.wood);
+ s+=block(420,375,160,40,55,'#b8c4c0')+block(430,380,40,28,2,'#7d9d9e',55)+block(540,380,30,30,3,'#36494e',55)+block(435,460,100,65,44,colors.wood)+block(555,510,35,55,95,'#d7e2e3');
  // Office desks, shelf and entrance from outside to corridor.
- s+=block(620,355,165,65,46,colors.wood)+block(690,520,90,55,40,colors.wood)+block(615,520,50,55,36,'#799ea1');
+ s+=block(620,375,165,65,46,colors.wood)+block(690,520,90,55,40,colors.wood)+block(615,520,50,55,36,'#799ea1');
  for(const [x,y,w,h,n]of rooms)s+=text(x+w/2,y+h-18,0,n,17);
  s+=text(100,308,0,'Couloir',15)+text(400,640,0,'8 m',19)+text(-35,300,0,'6 m',19);
  const points=Object.fromEntries(devices.map(d=>[d.id,[d.x,d.y,75]]));points.box=[340,410,55];points.switch=[765,465,65];points.web=[850,20,70];
