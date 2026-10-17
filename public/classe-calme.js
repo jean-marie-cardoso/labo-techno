@@ -1,4 +1,4 @@
-/* Classe calme : alertes et consignes uniquement, sans micro ni données d'élève. */
+/* Classe calme : alertes, consignes et minuteur, sans micro ni données d'élève. */
 (() => {
   'use strict';
   if (window.__laboClasseCalmeLoaded) return;
@@ -6,6 +6,7 @@
 
   const RELAY_WS = 'wss://classe-calme-relay.cardosojm.workers.dev/live';
   const MAX_LIFETIME = 35000;
+  const MAX_TIMER_LIFETIME = 180 * 60000;
   const DEFAULT_MESSAGE = 'MOINS DE BRUIT, MERCI.';
   let socket = null;
   let retryTimer = null;
@@ -18,6 +19,9 @@
   let host = null;
   let signal = null;
   let text = null;
+  let timerBadge = null;
+  let timerLabel = null;
+  let timerValue = null;
 
   function activityId() {
     // Seulement le chemin de l'activité : aucune donnée du formulaire, de l'URL ou de l'élève.
@@ -49,12 +53,20 @@
       .border .message{position:absolute;top:clamp(12px,2.3vw,36px);left:50%;transform:translateX(-50%);padding:10px 22px;border-radius:0 0 16px 16px;background:#b81220;font-size:clamp(20px,3vw,42px);max-width:90%;width:max-content}
       .notice{inset:20px 20px auto;padding:clamp(20px,4vw,48px);border:3px solid #b9e8d5;border-radius:20px;background:#08664b;box-shadow:0 8px 32px #002a2738}
       .notice .message{max-width:32ch;font-size:clamp(28px,5vw,64px);text-shadow:none}
+      .timer{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;max-width:calc(100% - 32px);padding:12px 18px;border:1px solid #cbd5e1;border-radius:16px;background:#fff;color:#142335;box-shadow:0 4px 20px #14233529;font-family:Arial,Helvetica,sans-serif}
+      .timer-label{font-size:13px;font-weight:700;line-height:1.2}
+      .timer-value{font-size:clamp(25px,4vw,36px);line-height:1;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+      .timer.finished{background:#fff2ec;border-color:#efbaa2;color:#8b2907}
+      .signal[hidden],.timer[hidden]{display:none}
       .pulse{animation:classe-calme-pulse 2.8s ease-in-out infinite}
       @keyframes classe-calme-pulse{0%,100%{opacity:1}50%{opacity:.82}}
       @media(prefers-reduced-motion:reduce){.pulse{animation:none}}
-    </style><div class="signal" role="alert" aria-live="assertive" aria-atomic="true"><p class="message"></p></div>`;
+    </style><div class="signal" role="alert" aria-live="assertive" aria-atomic="true" hidden><p class="message"></p></div><div class="timer" role="timer" aria-live="off" aria-atomic="true" hidden><span class="timer-label"></span><span class="timer-value"></span></div>`;
     signal = root.querySelector('.signal');
     text = root.querySelector('.message');
+    timerBadge = root.querySelector('.timer');
+    timerLabel = root.querySelector('.timer-label');
+    timerValue = root.querySelector('.timer-value');
     placeSignal();
   }
 
@@ -85,25 +97,39 @@
     }
     const alarm = currentState.alarm;
     const notice = currentState.notice?.expiresAt > now ? currentState.notice : null;
-    if (!alarm && !notice) {
+    const timer = currentState.timer;
+    if (!alarm && !notice && !timer) {
       hideSignal();
       return;
     }
     makeSignal();
     placeSignal();
+    signal.hidden = !alarm && !notice;
     const className = alarm ? `signal${currentState.mode === 'border' ? ' border' : ''}${currentState.pulse ? ' pulse' : ''}` : 'signal notice';
     if (signal.className !== className) signal.className = className;
     const role = alarm ? 'alert' : 'status';
     const live = alarm ? 'assertive' : 'polite';
     if (signal.getAttribute('role') !== role) signal.setAttribute('role', role);
     if (signal.getAttribute('aria-live') !== live) signal.setAttribute('aria-live', live);
-    const message = alarm ? currentState.message : notice.text;
+    const message = alarm ? currentState.message : notice?.text || '';
     if (text.textContent !== message) text.textContent = message;
+    timerBadge.hidden = !timer;
+    if (timer) {
+      const remaining = timer.state === 'running' ? Math.max(0, timer.expiresAt - now) : timer.remainingMs;
+      const finished = timer.state === 'finished' || (timer.state === 'running' && remaining === 0);
+      const label = finished ? 'Temps écoulé' : timer.state === 'paused' ? 'En pause' : 'Temps restant';
+      const seconds = Math.ceil(remaining / 1000);
+      const value = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+      timerBadge.classList.toggle('finished', finished);
+      if (timerLabel.textContent !== label) timerLabel.textContent = label;
+      if (timerValue.textContent !== value) timerValue.textContent = value;
+    }
     if (host.getAttribute('aria-hidden') !== 'false') {
       host.style.setProperty('display', 'block', 'important');
       host.setAttribute('aria-hidden', 'false');
     }
-    const nextDeadline = notice ? Math.min(expiresAt, notice.expiresAt) : expiresAt;
+    let nextDeadline = notice ? Math.min(expiresAt, notice.expiresAt) : expiresAt;
+    if (timer?.state === 'running' && timer.expiresAt > now) nextDeadline = Math.min(nextDeadline, now + 250, timer.expiresAt);
     expiryTimer = setTimeout(renderSignal, Math.max(0, nextDeadline - now));
   }
 
@@ -130,12 +156,17 @@
     const now = performance.now();
     const validNotice = state.notice && typeof state.notice.text === 'string' && state.notice.text.trim() &&
       typeof state.notice.remainingMs === 'number' && Number.isFinite(state.notice.remainingMs) && state.notice.remainingMs > 0;
+    const validTimer = state.timer && ['running', 'paused', 'finished'].includes(state.timer.state) &&
+      typeof state.timer.remainingMs === 'number' && Number.isFinite(state.timer.remainingMs) &&
+      state.timer.remainingMs >= 0 && state.timer.remainingMs <= MAX_TIMER_LIFETIME &&
+      (state.timer.state !== 'finished' || state.timer.remainingMs === 0);
     currentState = {
       alarm: state.alarm,
       mode: state.mode,
       pulse: state.pulse,
       message: (state.message || DEFAULT_MESSAGE).trim().slice(0, 120) || DEFAULT_MESSAGE,
-      notice: validNotice ? { text: state.notice.text.trim().slice(0, 180), expiresAt: now + Math.min(lifetime, state.notice.remainingMs) } : null
+      notice: validNotice ? { text: state.notice.text.trim().slice(0, 180), expiresAt: now + Math.min(lifetime, state.notice.remainingMs) } : null,
+      timer: validTimer ? { state: state.timer.state, remainingMs: state.timer.remainingMs, expiresAt: now + state.timer.remainingMs } : null
     };
     expiresAt = now + lifetime;
     renderSignal();
