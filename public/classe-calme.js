@@ -1,4 +1,4 @@
-/* Classe calme : alertes de classe uniquement, sans micro ni données d'élève. */
+/* Classe calme : alertes et consignes uniquement, sans micro ni données d'élève. */
 (() => {
   'use strict';
   if (window.__laboClasseCalmeLoaded) return;
@@ -6,16 +6,32 @@
 
   const RELAY_WS = 'wss://classe-calme-relay.cardosojm.workers.dev/live';
   const MAX_LIFETIME = 35000;
+  const DEFAULT_MESSAGE = 'MOINS DE BRUIT, MERCI.';
   let socket = null;
   let retryTimer = null;
   let expiryTimer = null;
   let retryCount = 0;
   let suspended = false;
   let expiresAt = 0;
+  let currentState = null;
   let lastStateAt = 0;
   let host = null;
   let signal = null;
   let text = null;
+
+  function activityId() {
+    // Seulement le chemin de l'activité : aucune donnée du formulaire, de l'URL ou de l'élève.
+    const marker = '/labo-techno/';
+    const pathname = location.pathname;
+    const start = pathname.indexOf(marker);
+    if (start < 0) return 'autre';
+    const path = pathname.slice(start + marker.length).replace(/(?:^|\/)index\.html$/, '').replace(/^\/+|\/+$/g, '');
+    if (!path) return 'accueil';
+    const legacy = path.match(/^([345])e-(\d{2})\.html$/);
+    if (legacy) return `${legacy[1]}/${legacy[2]}`;
+    const id = path.replace(/\.html$/, '');
+    return id.length <= 64 && /^[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*){0,2}$/.test(id) ? id : 'autre';
+  }
 
   function makeSignal() {
     if (host) return;
@@ -31,6 +47,8 @@
       .message{margin:0;max-width:18ch;font-size:clamp(32px,8vw,112px);font-weight:900;line-height:1.08;overflow-wrap:anywhere;text-wrap:balance;text-shadow:0 2px 8px #59030a}
       .border{background:transparent;box-shadow:inset 0 0 0 clamp(12px,2.3vw,36px) #d91a2b}
       .border .message{position:absolute;top:clamp(12px,2.3vw,36px);left:50%;transform:translateX(-50%);padding:10px 22px;border-radius:0 0 16px 16px;background:#b81220;font-size:clamp(20px,3vw,42px);max-width:90%;width:max-content}
+      .notice{inset:20px 20px auto;padding:clamp(20px,4vw,48px);border:3px solid #b9e8d5;border-radius:20px;background:#08664b;box-shadow:0 8px 32px #002a2738}
+      .notice .message{max-width:32ch;font-size:clamp(28px,5vw,64px);text-shadow:none}
       .pulse{animation:classe-calme-pulse 2.8s ease-in-out infinite}
       @keyframes classe-calme-pulse{0%,100%{opacity:1}50%{opacity:.82}}
       @media(prefers-reduced-motion:reduce){.pulse{animation:none}}
@@ -50,16 +68,43 @@
     clearTimeout(expiryTimer);
     expiryTimer = null;
     expiresAt = 0;
+    currentState = null;
     if (host) {
       host.style.setProperty('display', 'none', 'important');
-      host.setAttribute('aria-hidden', 'true');
+      if (host.getAttribute('aria-hidden') !== 'true') host.setAttribute('aria-hidden', 'true');
     }
   }
 
-  function expireSignal() {
-    const remaining = expiresAt - performance.now();
-    if (remaining > 0) expiryTimer = setTimeout(expireSignal, remaining);
-    else hideSignal();
+  function renderSignal() {
+    clearTimeout(expiryTimer);
+    expiryTimer = null;
+    const now = performance.now();
+    if (!currentState || expiresAt <= now) {
+      hideSignal();
+      return;
+    }
+    const alarm = currentState.alarm;
+    const notice = currentState.notice?.expiresAt > now ? currentState.notice : null;
+    if (!alarm && !notice) {
+      hideSignal();
+      return;
+    }
+    makeSignal();
+    placeSignal();
+    const className = alarm ? `signal${currentState.mode === 'border' ? ' border' : ''}${currentState.pulse ? ' pulse' : ''}` : 'signal notice';
+    if (signal.className !== className) signal.className = className;
+    const role = alarm ? 'alert' : 'status';
+    const live = alarm ? 'assertive' : 'polite';
+    if (signal.getAttribute('role') !== role) signal.setAttribute('role', role);
+    if (signal.getAttribute('aria-live') !== live) signal.setAttribute('aria-live', live);
+    const message = alarm ? currentState.message : notice.text;
+    if (text.textContent !== message) text.textContent = message;
+    if (host.getAttribute('aria-hidden') !== 'false') {
+      host.style.setProperty('display', 'block', 'important');
+      host.setAttribute('aria-hidden', 'false');
+    }
+    const nextDeadline = notice ? Math.min(expiresAt, notice.expiresAt) : expiresAt;
+    expiryTimer = setTimeout(renderSignal, Math.max(0, nextDeadline - now));
   }
 
   function receiveState(event) {
@@ -70,28 +115,30 @@
         typeof state.active !== 'boolean' || typeof state.alarm !== 'boolean') return;
     lastStateAt = performance.now();
     retryCount = 0;
-    if (!state.active || !state.alarm) {
+    if (!state.active) {
       hideSignal();
       return;
     }
     if (typeof state.remainingMs !== 'number' || !Number.isFinite(state.remainingMs) ||
         (state.mode !== 'cover' && state.mode !== 'border') ||
-        typeof state.pulse !== 'boolean' || typeof state.message !== 'string') return;
+        typeof state.pulse !== 'boolean' || (state.message !== undefined && typeof state.message !== 'string')) return;
     if (state.remainingMs <= 0) {
       hideSignal();
       return;
     }
     const lifetime = Math.min(MAX_LIFETIME, state.remainingMs);
-    makeSignal();
-    placeSignal();
-    signal.className = `signal${state.mode === 'border' ? ' border' : ''}${state.pulse ? ' pulse' : ''}`;
-    const message = state.message.trim().slice(0, 320) || 'MOINS DE BRUIT, MERCI.';
-    if (text.textContent !== message) text.textContent = message;
-    host.style.setProperty('display', 'block', 'important');
-    host.setAttribute('aria-hidden', 'false');
-    clearTimeout(expiryTimer);
-    expiresAt = performance.now() + lifetime;
-    expiryTimer = setTimeout(expireSignal, lifetime);
+    const now = performance.now();
+    const validNotice = state.notice && typeof state.notice.text === 'string' && state.notice.text.trim() &&
+      typeof state.notice.remainingMs === 'number' && Number.isFinite(state.notice.remainingMs) && state.notice.remainingMs > 0;
+    currentState = {
+      alarm: state.alarm,
+      mode: state.mode,
+      pulse: state.pulse,
+      message: (state.message || DEFAULT_MESSAGE).trim().slice(0, 120) || DEFAULT_MESSAGE,
+      notice: validNotice ? { text: state.notice.text.trim().slice(0, 180), expiresAt: now + Math.min(lifetime, state.notice.remainingMs) } : null
+    };
+    expiresAt = now + lifetime;
+    renderSignal();
   }
 
   function closeSocket() {
@@ -124,7 +171,9 @@
     clearTimeout(retryTimer);
     retryTimer = null;
     try {
-      const currentSocket = new WebSocket(RELAY_WS);
+      const url = new URL(RELAY_WS);
+      url.searchParams.set('activity', activityId());
+      const currentSocket = new WebSocket(url.href);
       socket = currentSocket;
       currentSocket.onmessage = event => {
         if (socket === currentSocket) receiveState(event);
