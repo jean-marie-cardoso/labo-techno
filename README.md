@@ -11,6 +11,12 @@
 - Programmation dans Scratch ; les pages proposent des expériences et des comportements à observer.
 - Sans compte, sans bibliothèque externe, sans collecte des réponses par le site.
 
+## Liaison Classe calme
+
+Les pages reçoivent automatiquement les alertes de Classe calme lorsqu’il est ouvert par le professeur. Aucun code de salle, compte élève ou micro côté élève. Si Classe calme est fermé ou le relais indisponible, les activités restent autonomes. La fermeture du professeur libère la liaison ; sans réseau, l’alerte expire au plus tard après 35 secondes.
+
+La liaison est commune au site : une activité ouverte hors de la salle peut également recevoir l’alerte. Le module reçoit uniquement un état d’alerte ; il n’envoie ni réponses, ni son, ni identifiant d’élève.
+
 Les données et modèles sont pédagogiques. Les expériences simulées ne prouvent pas la réalisation d’une fabrication ou d’une mesure réelle.
 
 ## Publication
