@@ -83,7 +83,7 @@ function fanCircuit(p){
 function irrigationBench(p){
  p.classList.add('irrigation-bench');
  p.append(E('p','Q2 · Place trois récipients gradués à la place des pots pour recueillir l’eau. Commence par 8 secondes, puis essaie une autre durée. Change seulement la durée.'));
- const steps=E('ol');['Choisis la durée de la pompe.','Lance un arrosage et attends son arrêt.','Relève les trois volumes en mL sur ta fiche.','Compare chaque volume aux limites : de 180 à 220 mL inclus.'].forEach(x=>steps.append(E('li',x)));p.append(steps);
+ const steps=E('ol');['Choisis la durée de la pompe.','Lance un arrosage et attends son arrêt.','Relève les trois volumes en mL sur ta feuille de classeur.','Compare chaque volume aux limites : de 180 à 220 mL inclus.'].forEach(x=>steps.append(E('li',x)));p.append(steps);
  const duration=select(p,'Durée de l’arrosage',[[8,'8 secondes'],[10,'10 secondes'],[12,'12 secondes']],8);
  const s=svg(p,'Banc d’arrosage avec une réserve, une pompe, trois tuyaux et trois récipients gradués');s.setAttribute('viewBox','0 0 880 440');
  s.innerHTML=`<defs><linearGradient id="water-grad" x2="0" y2="1"><stop stop-color="#8bcce4"/><stop offset="1" stop-color="#3d99bd"/></linearGradient></defs>
@@ -117,7 +117,7 @@ function irrigationBench(p){
    if(f<1){raf=requestAnimationFrame(frame);return}
    running=false;duration.disabled=false;start.disabled=false;s.querySelector('.pump-light').setAttribute('fill','#d6dcd3');
    vessels.forEach((v,i)=>{v.jet.setAttribute('opacity',0);v.reading.textContent=values[i]+' mL'});
-   status.textContent=`Arrosage terminé · durée simulée : ${seconds} s. Pot 1 : ${values[0]} mL ; pot 2 : ${values[1]} mL ; pot 3 : ${values[2]} mL. Note ces valeurs sur ta fiche.`;
+   status.textContent=`Arrosage terminé · durée simulée : ${seconds} s. Pot 1 : ${values[0]} mL ; pot 2 : ${values[1]} mL ; pot 3 : ${values[2]} mL. Note ces valeurs sur ta feuille de classeur.`;
   }raf=requestAnimationFrame(frame);
  });
  duration.addEventListener('change',clear);

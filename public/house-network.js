@@ -33,7 +33,7 @@
  ports.innerHTML='<strong>Switch du bureau · 8 ports RJ45</strong><div>'+['Box','PC A','Imprimante','Télévision','Console','Libre','Libre','Libre'].map((s,i)=>`<span><b>${i+1}</b>${s}</span>`).join('')+'</div>';
  p.append(E('p','Un câble par port. Le port 1 relie le switch à un port LAN de la box. Il reste trois ports libres. Le switch ne fournit pas de Wi-Fi.'));
  title(second?'Q2 · Essaie les adresses du réseau':'Q3 · Envoie un document à l’imprimante');
- p.append(E('p',second?'Rétablis les réglages. Garde PC A et « Imprimer un document ». Envoie avec PC B à 192.168.1.12, puis passe son adresse à 192.168.1.20 et renvoie la même demande. Note les deux adresses et les deux résultats sur ta fiche.':'Garde PC A et « Imprimer un document ». Envoie avec tout branché. Décoche seulement « Câble Imprimante–switch branché », puis renvoie la demande. Note chaque résultat et le trajet ; rebranche ce câble.'));
+ p.append(E('p',second?'Rétablis les réglages. Garde PC A et « Imprimer un document ». Envoie avec PC B à 192.168.1.12, puis passe son adresse à 192.168.1.20 et renvoie la même demande. Note les deux adresses et les deux résultats sur ta feuille de classeur.':'Garde PC A et « Imprimer un document ». Envoie avec tout branché. Décoche seulement « Câble Imprimante–switch branché », puis renvoie la demande. Note chaque résultat et le trajet ; rebranche ce câble.'));
  const lab=E('div',undefined,'house-lab');p.append(lab);
  const source=select(lab,'Appareil qui envoie',[['a','PC A · câble RJ45'],['b','PC B · Wi-Fi'],['tablet','Tablette · Wi-Fi']]);
  const request=select(lab,'Demande',[['print','Imprimer un document'],['web','Ouvrir un site Internet']]);
@@ -52,13 +52,13 @@
  const tasks=E('ol');(second?[
  'Donne à PC B une adresse libre parmi celles proposées. Depuis PC A, renvoie une impression et note si la correction suffit.',
  'Sans changer les adresses, coupe seulement « Liaison Internet disponible ». Depuis PC A, envoie une impression, puis une demande de site.',
- 'Sur ta fiche : note chaque résultat et explique la différence avec le trajet des données.'
+ 'Sur ta feuille de classeur : note chaque résultat et explique la différence avec le trajet des données.'
  ]:[
  'Dessine le trajet PC A → switch → imprimante.',
  'Rétablis tous les réglages. Coupe seulement « Liaison Internet disponible ». Depuis PC A, compare impression et site ; note les résultats.',
  'Rétablis tous les réglages. Débranche seulement « Câble switch–box branché ». Compare l’impression depuis PC A et depuis PC B. Justifie avec les trajets.'
  ]).forEach(t=>tasks.append(E('li',t)));p.append(tasks);
- if(second){title('Q4 · Protège les accès et les personnes');p.append(E('p','Sur ta fiche, réponds aux trois situations : un message inconnu réclame ton mot de passe ; tu veux publier une image dont la licence est inconnue ; une photo humiliante circule. Indique une décision et une vérification pour les deux premières, puis deux actions pour la dernière.'));}
+ if(second){title('Q4 · Protège les accès et les personnes');p.append(E('p','Sur ta feuille de classeur, réponds aux trois situations : un message inconnu réclame ton mot de passe ; tu veux publier une image dont la licence est inconnue ; une photo humiliante circule. Indique une décision et une vérification pour les deux premières, puis deux actions pour la dernière.'));}
  const explore=E('details');explore.append(E('summary','Pour le défi + : explorer une autre panne'));explore.append(E('p','Rétablis tout, puis éteins seulement le switch. Compare depuis PC A et PC B : impression et site. Les réglages des autres appareils sont disponibles dans « Autres appareils et réglages ».'));p.append(explore);
  function info(){const d=devices.find(v=>v.id===selected);detail.textContent=d?`${d.name} · ${d.room} · 192.168.1.${d.id==='b'?ipB.value:d.ip}. ${d.role}`:selected==='box'?'Box · salon. Port LAN vers le switch, point d’accès Wi-Fi pour les appareils sans fil, routeur vers Internet.':'Switch · bureau. Huit prises RJ45 : il transmet les données entre les appareils câblés. Un câble le relie à la box pour joindre les appareils Wi-Fi et Internet.';}
  const all=[source,request,sw,box,wifi,uplink,internet,ipB,...Object.values(endpoints).flatMap(v=>[v.power,v.link])];all.forEach(e=>e.addEventListener('change',()=>{route=[];out.dataset.success='';out.textContent='Réglage modifié. Envoie une nouvelle demande.';draw()}));chooser.addEventListener('change',()=>{selected=chooser.value;draw()});
