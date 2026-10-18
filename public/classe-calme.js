@@ -1,4 +1,4 @@
-/* Classe calme : alertes, consignes et minuteur, sans micro ni données d'élève. */
+/* Classe calme : alertes, consignes, minuteur et correction, sans données d'élève. */
 (() => {
   'use strict';
   if (window.__laboClasseCalmeLoaded) return;
@@ -8,6 +8,8 @@
   const MAX_LIFETIME = 35000;
   const MAX_TIMER_LIFETIME = 180 * 60000;
   const DEFAULT_MESSAGE = 'MOINS DE BRUIT, MERCI.';
+  const scriptBase = new URL('.', document.currentScript.src);
+  const CORRECTION_VERSION = '20261018-1';
   let socket = null;
   let retryTimer = null;
   let expiryTimer = null;
@@ -22,6 +24,38 @@
   let timerBadge = null;
   let timerLabel = null;
   let timerValue = null;
+  let correctionReleased = false;
+  let correctionVersion = 0;
+  let correctionViewer = null;
+  let correctionModule = null;
+
+  function setCorrection(released) {
+    const id = activityId();
+    released = released && /^(?:[345]\/\d{2}|bonus\/[345]-\d{2})$/.test(id);
+    if (released === correctionReleased) return;
+    correctionReleased = released;
+    const version = ++correctionVersion;
+    if (!released) {
+      correctionViewer?.destroy();
+      correctionViewer = null;
+      return;
+    }
+    const url = new URL('correction-viewer.js', scriptBase);
+    url.searchParams.set('v', CORRECTION_VERSION);
+    correctionModule ??= import(url.href).catch(error => { correctionModule = null; throw error; });
+    correctionModule.then(module => {
+      if (!correctionReleased || version !== correctionVersion) return;
+      const relay = new URL(RELAY_WS.replace(/^ws/, 'http'));
+      const endpoint = new URL('/correction', relay);
+      const channel = relay.searchParams.get('channel');
+      if (channel && /^test-[a-z0-9-]{8,70}$/.test(channel)) endpoint.searchParams.set('channel', channel);
+      endpoint.searchParams.set('activity', id);
+      correctionViewer = module.createCorrectionViewer({ endpoint: endpoint.href });
+    }).catch(() => {
+      // Une prochaine information du professeur relancera le chargement.
+      if (version === correctionVersion) correctionReleased = false;
+    });
+  }
 
   function activityId() {
     // Seulement le chemin de l'activité : aucune donnée du formulaire, de l'URL ou de l'élève.
@@ -81,6 +115,7 @@
     expiryTimer = null;
     expiresAt = 0;
     currentState = null;
+    setCorrection(false);
     if (host) {
       host.style.setProperty('display', 'none', 'important');
       if (host.getAttribute('aria-hidden') !== 'true') host.setAttribute('aria-hidden', 'true');
@@ -98,8 +133,18 @@
     const alarm = currentState.alarm;
     const notice = currentState.notice?.expiresAt > now ? currentState.notice : null;
     const timer = currentState.timer;
-    if (!alarm && !notice && !timer) {
+    const correction = currentState.correction;
+    setCorrection(correction);
+    if (!alarm && !notice && !timer && !correction) {
       hideSignal();
+      return;
+    }
+    if (!alarm && !notice && !timer) {
+      if (host) {
+        host.style.setProperty('display', 'none', 'important');
+        host.setAttribute('aria-hidden', 'true');
+      }
+      expiryTimer = setTimeout(renderSignal, Math.max(0, expiresAt - now));
       return;
     }
     makeSignal();
@@ -166,7 +211,8 @@
       pulse: state.pulse,
       message: (state.message || DEFAULT_MESSAGE).trim().slice(0, 120) || DEFAULT_MESSAGE,
       notice: validNotice ? { text: state.notice.text.trim().slice(0, 180), expiresAt: now + Math.min(lifetime, state.notice.remainingMs) } : null,
-      timer: validTimer ? { state: state.timer.state, remainingMs: state.timer.remainingMs, expiresAt: now + state.timer.remainingMs } : null
+      timer: validTimer ? { state: state.timer.state, remainingMs: state.timer.remainingMs, expiresAt: now + state.timer.remainingMs } : null,
+      correction: state.correction === true
     };
     expiresAt = now + lifetime;
     renderSignal();
