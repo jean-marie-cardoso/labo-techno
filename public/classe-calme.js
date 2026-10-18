@@ -59,6 +59,8 @@
 
   function activityId() {
     // Seulement le chemin de l'activité : aucune donnée du formulaire, de l'URL ou de l'élève.
+    const guide = document.querySelector('meta[name="classe-calme-activity"]')?.content;
+    if (/^(projets|exposes)\/[345]$/.test(guide || '')) return guide;
     const marker = '/labo-techno/';
     const pathname = location.pathname;
     const start = pathname.indexOf(marker);

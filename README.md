@@ -26,3 +26,7 @@ Le workflow GitHub Actions publie uniquement `public/`. Il se lance manuellement
 Ce dépôt contient exclusivement les fichiers destinés à la publication. Les cours Word/PDF, contrôles, corrigés, sauvegardes et catalogue professeur restent dans le dossier de travail local.
 
 Documentation : [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages) et [publication par workflow](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+
+## Guides de travail en groupe
+
+`projets/5`, `projets/4`, `projets/3` : sept séances alignées sur les projets annuels. `exposes/5`, `exposes/4`, `exposes/3` : préparation et passages sur quatre séances. Navigation par `#seance-1`, aides et outils existants intégrés. Aucun champ de réponse ni sauvegarde élève. Sources locales : `src/group-guides.json`, `src/build_group_guides.py`, `src/group-guide.js` et `.css`. Les accès professeur dans les dossiers ouvrent Classe calme avec `?activity=projets/5&seance=1`.
